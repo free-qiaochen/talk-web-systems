@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
 import Home from './home/home'
 import List from './list/list'
+import Chat from './chat-room'
 import Com from './com'
 
 function Page (props) {
@@ -13,6 +14,7 @@ function Page (props) {
           {/* <Switch> */}
             <Route path="/home" component={Home} />
             <Route path="/list" component={List} />
+            <Route path="/chat" component={Chat} />
           {/* </Switch> */}
         </Com>
       } />

@@ -1,0 +1,22 @@
+{
+  "name": "servers",
+  "version": "1.0.0",
+  "description": "个人网站服务端，socket通信，博客，收藏夹等功能",
+  "main": "index.js",
+  "scripts": {
+    "server": "node socketIoServer.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^2.3.0"
+  },
+  "keywords": [
+    "socket.io",
+    "mongoDB",
+    "express",
+    "koa"
+  ],
+  "author": "qiao",
+  "license": "ISC"
+}
