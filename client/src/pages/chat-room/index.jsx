@@ -9,34 +9,73 @@ import { getChartList } from '../../api/chart'
 let ifInit = true
 let autoFocusInst, ioSocket, lists
 function Chat(props) {
-  // const { getFieldProps } = props.form
   const [mesHistory, setMesHistory] = useState()
   const [mes, setMes] = useState()
   const [nickName, setNickName] = useState()
   console.log('---------', ifInit)
+  useEffect(() => {
+    // 连接
+    if (ifInit) {
+      ifInit = false
+      // 初始化链接服务socket
+      console.log('begin connect', ifInit)
+      ioSocket = IO(global.serveUrl.local)
+      socketEvents(ioSocket, addMes)
+      console.log('connect', ifInit)
+      // 检测到已有昵称则直接使用
+      let nickName = sessionStorage.getItem('nickName') || null
+      if (nickName && nickName !== null && nickName != 'undefined') {
+        setNickName(nickName)
+        changeNickName(nickName)
+      }
+      // 请求接口，获取最近（20条）的历史信息
+      initHistoryList(20)
+    }
+  })
   const addMes = val => {
-    console.log(mesHistory, val)
+    // console.log(mesHistory, val)
     lists += val
     setMesHistory(lists)
+    // 消息框滚动到底部
+    let chatRoom = document.querySelector('#chatRoom')
+    if (chatRoom.scrollHeight > chatRoom.clientHeight) {
+      //设置滚动条到最底部
+      chatRoom.scrollTop = chatRoom.scrollHeight - chatRoom.clientHeight
+    }
   }
   const sendMes = () => {
     send(ioSocket, mes, nickName)
     setMes('')
   }
-  async function changeNickName(params) {
-    // 连接
-    if (ifInit) {
-      console.log('connect', ifInit)
-      ioSocket = IO(global.serveUrl.local)
-      socketEvents(ioSocket, addMes, nickName)
-      ifInit = false
-      // api获取数据
-      console.log('获取数据----------api')
-      let data = await getChartList()
-      console.log(data)
+  function changeNickName(names) {
+    let name = names || nickName
+    if (!ioSocket || !name || name == 'undefined') return
+    console.log(names, '---change nickName', nickName)
+    sessionStorage.setItem('nickName', name)
+    ioSocket.send(name, 'nick')
+  }
+  async function initHistoryList(num) {
+    // api获取数据
+    // console.log('获取数据----------api')
+    let data = await getChartList({ num })
+    console.log('init api data--', data)
+    if (data && data.length > 0) {
+      const nickName = sessionStorage.getItem('nickName') || null
+      let Messages
+      let targets = data.reverse()
+      targets.forEach(item => {
+        let className = item.nickName === nickName ? 'mesRight' : 'mes'
+        // let message = className === 'mesRight' ? msg.replace(nickName + '：', '') : msg
+        if (className === 'mesRight') {
+          Messages += `<p class="${className}">${item.says}</p>`
+        } else {
+          Messages += `<p class="${className}">${item.nickName +
+            ':' +
+            item.says}</p>`
+        }
+      })
+      addMes(Messages)
     }
-    sessionStorage.setItem('nickName', nickName)
-    ioSocket.send(nickName, 'nick')
   }
   return (
     <div className='chats'>
@@ -79,18 +118,23 @@ function Chat(props) {
           value={nickName}>
           昵称
         </InputItem>
-        <Button onClick={changeNickName}>输入昵称，点击进入房间</Button>
+        <Button onClick={() => changeNickName()}>输入昵称，点击进入房间</Button>
       </div>
     </div>
   )
 }
 
 function send(ioSocket, mesVal, nickName) {
-  if (nickName === '' || !nickName) {
+  console.log(nickName, mesVal)
+  if (!nickName || nickName === 'null') {
     alert('请先输入昵称，再进入房间')
     return
   }
-  ioSocket.send(mesVal)
+  if (!!mesVal) {
+    ioSocket.send(mesVal)
+  } else {
+    alert('请输入消息')
+  }
   // console.log(sayInput.value)
   // sayInput.value = ''
   // setTimeout(() => {

@@ -14,8 +14,10 @@ app.use('/', (req,res,next) => {
 })
 
 app.get('/chat', function (req, res) {
+  let {num} = req.query
+  // console.log(req.query)
   const findOption = {}
-  msgDb.findMes(findOption, { nickName: 1, says: 1, _id: 0 }, {}, callback)
+  msgDb.findMes(findOption, { nickName: 1, says: 1, _id: 0 }, {limit:Number(num),sort:{_id:-1}}, callback)
   function callback (err, data) {
     // console.log(data, 'data')
     res.send(data)
@@ -28,6 +30,9 @@ var onlineUsers = {}
 // 當前用戶人數
 var onlineCount = 0
 var i = 0
+// socket.emit() 只让自己收到消息
+// socket.broadcast.emit() 发给除了自己的其他所有人，当用户退出时比较有用
+// io.emit() 发给所有人
 
 io.on('connection', function (socket) {
   console.log('有人上線了！！');
@@ -35,12 +40,12 @@ io.on('connection', function (socket) {
   // 監聽新用戶的加入
   socket.name = ++i
   onlineUsers[socket.name] = socket
-
+  // 发送消息给所有人
+  io.emit('message',`欢迎${socket.name}`)
   // 監聽新用戶的退出
   socket.on('disconnect', function () {
     console.log('有人退出！');
     delete onlineUsers[socket.name]
-
   })
   // 監聽用戶發佈的聊天內容
   socket.on('message', function (msg, type) {

@@ -1,7 +1,7 @@
 import { getData } from './http'
 
 // 初始进入聊天页面，获取最近10条聊天信息
-export const getChartList = () => getData('/chat')
+export const getChartList = (data) => getData('/chat',data)
 
 /* export const getChartList = () => {
   let xhr = new XMLHttpRequest()
