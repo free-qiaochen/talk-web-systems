@@ -2,22 +2,23 @@ var app = require('express')()
 
 var http = require('http').Server(app)
 var io = require('socket.io')(http)
-
 var fs = require('fs')
+const msgDb = require('./src/models/talk')
 
 // http 設置
-app.get('/', function (req,res) {
-  // res.send('ok')
-  fs.readFile('./socketIoClient.html',function (err, data) {
-    if (err) {
-      console.log(err);
-      callback('未找到文件')
-    } else {
-      callback(data)
-    }
-  })
-  function callback(data) {
-    res.send(data.toString())
+app.use('/', (req,res,next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
+  res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE,OPTIONS');
+  next()
+})
+
+app.get('/chat', function (req, res) {
+  const findOption = {}
+  msgDb.findMes(findOption, { nickName: 1, says: 1, _id: 0 }, {}, callback)
+  function callback (err, data) {
+    // console.log(data, 'data')
+    res.send(data)
   }
 })
 
@@ -39,10 +40,10 @@ io.on('connection', function (socket) {
   socket.on('disconnect', function () {
     console.log('有人退出！');
     delete onlineUsers[socket.name]
-    
+
   })
   // 監聽用戶發佈的聊天內容
-  socket.on('message', function (msg,type) {
+  socket.on('message', function (msg, type) {
     // console.log(msg,type)
     // 修改昵称
     if (type === 'nick') {
@@ -52,16 +53,24 @@ io.on('connection', function (socket) {
       broadcast(`修改昵称为：${msg}`, socket)
     } else {
       broadcast(msg, socket)
+      // 聊天数据入库
+      const mesData = {
+        nickName: socket.name,
+        says: msg,
+      }
+      msgDb.save(mesData, (mes) => {
+        console.log(mes)
+      })
     }
   })
 })
-function broadcast(msg, socket) {
+function broadcast (msg, socket) {
   for (const key in onlineUsers) {
-    onlineUsers[key].send(socket.name+'：'+ msg)
+    onlineUsers[key].send(socket.name + '：' + msg)
   }
 }
 
 http.listen(5005, function () {
   console.log('listening on port 5005');
-  
+
 })

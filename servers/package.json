@@ -18,5 +18,8 @@
     "koa"
   ],
   "author": "qiao",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "mongoose": "^5.8.7"
+  }
 }

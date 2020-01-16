@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import './index.scss'
-import { Button, InputItem } from 'antd-mobile'
 import IO from 'socket.io-client'
 import { socketEvents } from './component/socket-io'
+import { Button, InputItem } from 'antd-mobile'
+import global from '../../config'
+import { getChartList } from '../../api/chart'
 
 let ifInit = true
 let autoFocusInst, ioSocket, lists
@@ -21,14 +23,19 @@ function Chat(props) {
     send(ioSocket, mes, nickName)
     setMes('')
   }
-  function changeNickName(params) {
+  async function changeNickName(params) {
     // 连接
     if (ifInit) {
       console.log('connect', ifInit)
-      ioSocket = IO('http://47.104.107.19:5005/')
+      ioSocket = IO(global.serveUrl.local)
       socketEvents(ioSocket, addMes, nickName)
       ifInit = false
+      // api获取数据
+      console.log('获取数据----------api')
+      let data = await getChartList()
+      console.log(data)
     }
+    sessionStorage.setItem('nickName', nickName)
     ioSocket.send(nickName, 'nick')
   }
   return (

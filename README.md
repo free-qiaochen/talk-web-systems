@@ -12,4 +12,7 @@ servers 服务端，数据库mogoDB，
 
 client 客户端
 pc 移动 自适应，移动端优先
+初始引用了antd-mobile ui库，只适用于移动端，
+现计划适应antd-design 搭配响应式方案来开发；
+
 

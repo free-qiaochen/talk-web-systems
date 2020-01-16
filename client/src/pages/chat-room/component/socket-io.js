@@ -17,8 +17,9 @@ function socketEvents (ioSocket,addMes,nickNames,ifinit) {
     // var mesConts = document.querySelector('#mesConts')
     // 本人消息过滤，样式和内容过滤
     console.log(nickNames,'---nickNames')
-    var className = msg.split('：')[0] === nickNames ? 'mesRight' : 'mes'
-    var message = className === 'mesRight' ? msg.replace(nickNames + '：', '') : msg
+    const nickName = sessionStorage.getItem('nickName') || null
+    var className = msg.split('：')[0] === nickName ? 'mesRight' : 'mes'
+    var message = className === 'mesRight' ? msg.replace(nickName + '：', '') : msg
     var newMess = `<p class="${className}">${message}</p>`
     addMes(newMess)
     // mesConts.innerHTML += `<p class="${className}">${message}</p>`

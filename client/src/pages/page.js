@@ -14,7 +14,7 @@ function Page (props) {
           {/* <Switch> */}
             <Route path="/home" component={Home} />
             <Route path="/list" component={List} />
-            <Route path="/chat" component={Chat} />
+            <Route path="/chatRoom" component={Chat} />
           {/* </Switch> */}
         </Com>
       } />

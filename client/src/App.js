@@ -44,7 +44,7 @@ function App() {
             <Link to='/list'>list</Link>
           </li>
           <li>
-            <Link to='/chat'>chat</Link>
+            <Link to='/chatRoom'>chat</Link>
           </li>
         </ul>
         <Page />
