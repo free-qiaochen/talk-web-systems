@@ -1,39 +1,22 @@
 import React from 'react'
 import logo from './logo.svg'
-import './App.css'
+import './App.scss'
+import { BrowserRouter as Router, Link } from 'react-router-dom'
 import { Button } from 'antd-mobile'
 import Page from './pages/page'
-import Home from './pages/home/home'
-import { BrowserRouter as Router, Link } from 'react-router-dom'
+// import TabMenu from "./components/tab";
 
-function App() {
+function App () {
   return (
     <div className='App'>
       <header className='App-header'>
         {/* <img src={logo} className="App-logo" alt="logo" /> */}
-        <a
-          className='App-link'
-          href='https://reactjs.org'
-          target='_blank'
-          rel='noopener noreferrer'>
-          Learn React
-        </a>
         <a className='App-link' href='http://47.104.107.19:8080/'>
           talk with me
         </a>
       </header>
-      <Button
-        type='primary'
-        className='commodity-module__bottom__btn'
-        style={{
-          backgroundColor: '0',
-          color: '#000'
-        }}
-        onClick={() => goPackage()}>
-        {'立即购买'}
-      </Button>
       <Router>
-        <ul>
+        <ul className="menus">
           <li>
             <Link to='/'>com</Link>
           </li>
@@ -47,12 +30,13 @@ function App() {
             <Link to='/chatRoom'>chat</Link>
           </li>
         </ul>
+        {/* <TabMenu /> */}
         <Page />
       </Router>
     </div>
   )
 }
-function goPackage(params) {
+function goPackage (params) {
   console.log('---')
 }
 

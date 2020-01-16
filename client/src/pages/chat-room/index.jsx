@@ -6,34 +6,34 @@ import { Button, InputItem } from 'antd-mobile'
 import global from '../../config'
 import { getChartList } from '../../api/chart'
 
-let ifInit = true
-let autoFocusInst, ioSocket, lists
+// let ifInit = true
+let ioSocket
 function Chat(props) {
   const [mesHistory, setMesHistory] = useState()
   const [mes, setMes] = useState()
   const [nickName, setNickName] = useState()
-  console.log('---------', ifInit)
+  console.log('---------')
+  let lists,autoFocusInst
   useEffect(() => {
+    // 添加第二个参数[],表示无依赖，相当于didMount钩子
+    lists = ''
     // 连接
-    if (ifInit) {
-      ifInit = false
-      // 初始化链接服务socket
-      console.log('begin connect', ifInit)
-      ioSocket = IO(global.serveUrl.local)
-      socketEvents(ioSocket, addMes)
-      console.log('connect', ifInit)
-      // 检测到已有昵称则直接使用
-      let nickName = sessionStorage.getItem('nickName') || null
-      if (nickName && nickName !== null && nickName != 'undefined') {
-        setNickName(nickName)
-        changeNickName(nickName)
-      }
-      // 请求接口，获取最近（20条）的历史信息
-      initHistoryList(20)
+    // 初始化链接服务socket
+    console.log('begin connect')
+    ioSocket = IO(global.serveUrl.local)
+    socketEvents(ioSocket, addMes)
+    console.log('connect')
+    // 检测到已有昵称则直接使用
+    let nickName = sessionStorage.getItem('nickName') || null
+    if (nickName && nickName !== null && nickName != 'undefined') {
+      setNickName(nickName)
+      changeNickName(nickName)
     }
-  })
+    // 请求接口，获取最近（20条）的历史信息
+    initHistoryList(20)
+  }, [])
   const addMes = val => {
-    // console.log(mesHistory, val)
+    console.log(mesHistory, val)
     lists += val
     setMesHistory(lists)
     // 消息框滚动到底部
