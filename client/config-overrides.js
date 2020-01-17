@@ -29,7 +29,8 @@ const setWebpack = () => config => {
     // config.devtool = false;
     // 配置打包后的文件位置
     // config.output.path = __dirname + '../dist/demo/';
-    config.output.publicPath = 'https://static-aqs.health.ikang.com/2c/'
+    // config.output.publicPath = 'https://static-aqs.health.ikang.com/2c/'
+    config.output.publicPath = '/'
     // 添加js打包gzip配置
     // config.plugins.push(
     //   new CompressionWebpackPlugin({
