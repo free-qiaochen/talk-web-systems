@@ -2,7 +2,12 @@ import React, { useEffect, useState } from 'react'
 import './index.scss'
 import IO from 'socket.io-client'
 import { socketEvents } from './component/socket-io'
-import { Button, InputItem } from 'antd-mobile'
+import { Toast, Button, InputItem } from 'antd-mobile'
+
+// Toast.info('This is a toast tips !!!', 1);
+
+// Toast.success('Load success !!!', 1);
+
 import global from '../../config'
 import { getChartList } from '../../api/chart'
 
@@ -13,14 +18,14 @@ function Chat(props) {
   const [mes, setMes] = useState()
   const [nickName, setNickName] = useState()
   console.log('---------')
-  let lists,autoFocusInst
+  let lists, autoFocusInst
   useEffect(() => {
     // 添加第二个参数[],表示无依赖，相当于didMount钩子
     lists = ''
     // 连接
     // 初始化链接服务socket
     console.log('begin connect')
-    ioSocket = IO(global.serveUrl.local)
+    ioSocket = IO(global.getCurrentServer())
     socketEvents(ioSocket, addMes)
     console.log('connect')
     // 检测到已有昵称则直接使用
@@ -128,12 +133,14 @@ function send(ioSocket, mesVal, nickName) {
   console.log(nickName, mesVal)
   if (!nickName || nickName === 'null') {
     alert('请先输入昵称，再进入房间')
+    Toast.info('请先输入昵称，再进入房间 !!!', 1);
     return
   }
   if (!!mesVal) {
     ioSocket.send(mesVal)
   } else {
-    alert('请输入消息')
+    // alert('请输入消息')
+    Toast.info('请输入消息 !!!', 1);
   }
   // console.log(sayInput.value)
   // sayInput.value = ''
