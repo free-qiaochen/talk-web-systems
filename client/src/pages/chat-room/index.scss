@@ -1,30 +1,45 @@
 .chats {
+  padding: 0 10Px;
   text-align: left;
-  .onlineNum{
+
+  .onlineNum {
     line-height: 30Px;
     text-align: right;
-    padding-right:10px ;
+    padding-right: 10px;
     color: #999;
   }
+
   #chatRoom {
     padding: 10px;
     width: 90%;
-    min-height:50px;
+    min-height: 50px;
     max-height: 300px;
     overflow: auto;
     border: 1px dashed #caccd2;
     background: #f6f6f6;
-    #mesConts{
+
+    #mesConts {
       font-size: 14Px;
       line-height: 18Px;
       font-family: serif;
       color: #666;
+      img{
+        width: 60%;
+      }
     }
   }
 
   .changeName,
   .messText {
     padding: 10px 0;
+
+    .mesInput {
+      display: inline-block;
+      width: 70%;
+      vertical-align: top;
+      line-height: 50Px;
+      height: 50Px;
+    }
   }
 
   .mesRight {
@@ -32,6 +47,7 @@
     text-align: right;
   }
 }
+
 p {
   margin: 0;
 }

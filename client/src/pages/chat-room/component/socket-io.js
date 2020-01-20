@@ -24,15 +24,26 @@ function socketEvents (ioSocket, addMes, ifinit) {
     var newMess = `<p class="${className}">${message}</p>`
     addMes(newMess, onlineNum)
   })
+  // 监听接收到图片
+  ioSocket.on('receiveImg', (data,onlineNum) => {
+    const nickName = sessionStorage.getItem('nickName') || null
+    console.log(data)
+    let className = data.nickName === nickName ? 'mesRight' : 'mes'
+    let imgHtml = 
+    `<div class="${className}">
+      <img src="${data.img}"/>
+    </div>` 
+    addMes(imgHtml,onlineNum,{type:'img'})
+  })
   // 监听有人进入房间(上车)
   ioSocket.on('takeCar', (name, onlineNum) => {
     console.log('欢迎新同学加入！')
-    addMes('', onlineNum, { ifLeave: 'in', name })
+    addMes('', onlineNum, { type: 'in', name })
   })
   // 监听有人离开的自定义事件
   ioSocket.on('leave', (name, onlineNum) => {
     console.log(`${name}:离开了`)
-    addMes('', onlineNum, { ifLeave: 'leave', name })
+    addMes('', onlineNum, { type: 'leave', name })
   })
   // 方式2????
   // ioSocket.on('news',function (msg) {

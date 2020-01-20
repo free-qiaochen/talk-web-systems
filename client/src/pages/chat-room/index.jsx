@@ -43,26 +43,34 @@ function Chat(props) {
   const comWillUnMount = () => {
     console.log('组件将销毁')
     // console.log(ioSocket, mes, nickName);
-    ioSocket.close()  // 断开socket 连接
+    ioSocket.close() // 断开socket 连接
   }
-  
+
   /** 接收到服务端message ，显示消息
    * @params val 新消息，onlineNum在线人数，
    * leaveObj 有人(进入)离开对象信息
-   * 
+   *
    *  */
-  const addMes = (val, onlineNums,leaveObj) => {
-    console.log(mesHistory, val, onlineNums)
+  const addMes = (val, onlineNums, leaveObj) => {
+    // console.log(mesHistory, val, onlineNums)
     if (onlineNums >= 1) setOnlineNum(Number(onlineNums))
-    if (leaveObj && leaveObj.ifLeave === 'leave') {
+    if (leaveObj && leaveObj.type === 'leave') {
       Toast.info(`${leaveObj.name}：离开了！`)
       return
-    } else if(leaveObj && leaveObj.ifLeave === 'in') {
+    } else if (leaveObj && leaveObj.type === 'in') {
       Toast.info(`欢迎新朋友,请自定义个人昵称!`)
       return
     }
     lists += val
     setMesHistory(lists)
+    scrollToBottom()
+    if (leaveObj && leaveObj.type === 'img') {
+      setTimeout(()=>{
+        scrollToBottom()
+      },1000)
+    }
+  }
+  const scrollToBottom = () => {
     // 消息框滚动到底部
     let chatRoom = document.querySelector('#chatRoom')
     if (chatRoom.scrollHeight > chatRoom.clientHeight) {
@@ -70,8 +78,21 @@ function Chat(props) {
       chatRoom.scrollTop = chatRoom.scrollHeight - chatRoom.clientHeight
     }
   }
-  const sendMes = () => {
-    send(ioSocket, mes, nickName)
+  /**发送消息
+   * @params type--消息类型
+   *  */
+  const sendMes = type => {
+    console.log(nickName, mes)
+    if (!nickName || nickName === 'null') {
+      // alert('请先输入昵称，再进入房间')
+      Toast.info('请先输入昵称，再进入房间 !!!', 1)
+      return
+    }
+    if (type === 'img') {
+      sendImg(ioSocket, 'curImg')
+      return
+    }
+    sendText(ioSocket, mes)
     setMes('')
   }
   function changeNickName(names) {
@@ -112,10 +133,15 @@ function Chat(props) {
           {/* {mesHistory} */}
         </div>
       </div>
+      <div className='mesImages'>
+        发送图片，表情包
+        <input type='file' id='curImg' accept='*.jpe?g,*.png' />
+        <button onClick={() => sendMes('img')}>发送</button>
+      </div>
       <div className='messText'>
         <InputItem
-          // {...getFieldProps('autofocus')}
           clear
+          className='mesInput'
           placeholder='输入消息，发送'
           ref={el => (autoFocusInst = el)}
           onKeyUp={e => {
@@ -126,10 +152,10 @@ function Chat(props) {
           onChange={val => {
             setMes(val)
           }}
-          value={mes}>
-          消息
-        </InputItem>
-        <Button type="ghost" onClick={sendMes}>发送</Button>
+          value={mes}></InputItem>
+        <Button type='ghost' inline onClick={sendMes}>
+          发送
+        </Button>
       </div>
       <div className='changeName'>
         <InputItem
@@ -146,22 +172,18 @@ function Chat(props) {
           value={nickName}>
           昵称
         </InputItem>
-        <Button type="ghost" onClick={() => changeNickName()}>输入昵称，点击进入房间</Button>
+        <Button type='ghost' onClick={() => changeNickName()}>
+          输入昵称，点击进入房间
+        </Button>
       </div>
     </div>
   )
 }
-
-function send(ioSocket, mesVal, nickName) {
-  console.log(nickName, mesVal)
-  if (!nickName || nickName === 'null') {
-    // alert('请先输入昵称，再进入房间')
-    Toast.info('请先输入昵称，再进入房间 !!!', 1)
-    return
-  }
+// 发送文本消息
+function sendText(ioSocket, mesVal) {
   if (!!mesVal) {
     // 添加防护措施(防止输入端植入代码)
-    let safeMes = mesVal.replace(/<[^<>]+>/g,'')
+    let safeMes = mesVal.replace(/<[^<>]+>/g, '')
     ioSocket.send(safeMes)
   } else {
     // alert('请输入消息')
@@ -173,6 +195,18 @@ function send(ioSocket, mesVal, nickName) {
   //   sayInput.focus()
   //   sayInput.scrollIntoView()
   // }, 0);
+}
+// 发送图片
+function sendImg(ioSocket, imgsId) {
+  const imgInput = document.getElementById(imgsId)
+  let file = imgInput.files[0]
+  let reader = new FileReader()
+  reader.readAsDataURL(file)
+  reader.onload = function() {
+    let imgs = { img: this.result,nickName:'' }
+    ioSocket.emit('sendImg', imgs)
+    console.log(imgs)
+  }
 }
 
 export default Chat

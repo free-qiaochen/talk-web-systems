@@ -71,6 +71,11 @@ io.on('connection', function (socket) {
       })
     }
   })
+  // 监听发送图片
+  socket.on('sendImg',function (data) {
+    data.nickName = socket.name
+    io.emit('receiveImg',data,onlineCount)
+  })
 })
 function broadcast (msg, socket) {
   for (const key in onlineUsers) {
