@@ -1,6 +1,10 @@
 import React from 'react';
 // import { Button } from 'antd-mobile'
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
+import {
+  // BrowserRouter as Router,
+  // Switch,
+  Route
+} from 'react-router-dom'
 import Home from './home/home'
 import List from './list/list'
 import Chat from './chat-room'
@@ -12,9 +16,9 @@ function Page (props) {
       <Route path="/" render={() =>
         <Com>
           {/* <Switch> */}
-            <Route path="/home" component={Home} />
-            <Route path="/list" component={List} />
-            <Route path="/chatRoom" component={Chat} />
+          <Route path="/home" component={Home} />
+          <Route path="/list" component={List} />
+          <Route path="/chatRoom" component={Chat} />
           {/* </Switch> */}
         </Com>
       } />

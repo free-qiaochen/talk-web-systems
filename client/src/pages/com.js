@@ -5,9 +5,9 @@ function Com (props) {
   console.log(props)
   return (
     <div className="home">
-      <div className="conts">
+      {/* <div className="conts">
         com内容区
-      </div>
+      </div> */}
       {/* <Router /> */}
       {props.children}
     </div>

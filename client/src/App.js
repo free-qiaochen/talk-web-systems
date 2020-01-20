@@ -1,8 +1,8 @@
 import React from 'react'
-import logo from './logo.svg'
+// import logo from './logo.svg'
 import './App.scss'
 import { BrowserRouter as Router, Link } from 'react-router-dom'
-import { Button } from 'antd-mobile'
+// import { Button } from 'antd-mobile'
 import Page from './pages/page'
 // import TabMenu from "./components/tab";
 
@@ -36,8 +36,8 @@ function App () {
     </div>
   )
 }
-function goPackage (params) {
-  console.log('---')
-}
+// function goPackage (params) {
+//   console.log('---')
+// }
 
 export default App

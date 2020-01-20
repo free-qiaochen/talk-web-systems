@@ -14,10 +14,11 @@ import { getChartList } from '../../api/chart'
 // let ifInit = true
 let ioSocket
 function Chat(props) {
-  const [mesHistory, setMesHistory] = useState()
-  const [mes, setMes] = useState()
-  const [nickName, setNickName] = useState()
-  console.log('---------')
+  const [mesHistory, setMesHistory] = useState() // 历史消息
+  const [mes, setMes] = useState() // 当前输入的消息
+  const [nickName, setNickName] = useState() // 昵称
+  const [onlineNum, setOnlineNum] = useState(1) // 在线人数
+  // console.log('---------')
   let lists, autoFocusInst
   useEffect(() => {
     // 添加第二个参数[],表示无依赖，相当于didMount钩子
@@ -36,11 +37,21 @@ function Chat(props) {
     }
     // 请求接口，获取最近（20条）的历史信息
     initHistoryList(20)
+    // 组件销毁调用函数
+    return comWillUnMount
   }, [])
-  const addMes = val => {
-    console.log(mesHistory, val)
+  const comWillUnMount = () => {
+    console.log('组件将销毁')
+    console.log(ioSocket, mes, nickName);
+    ioSocket.close()
+  }
+  // 接收到服务端message ，显示
+  // @params val 新消息，onlineNum在线人数
+  const addMes = (val, onlineNums) => {
+    console.log(mesHistory, val, onlineNums)
     lists += val
     setMesHistory(lists)
+    if (onlineNums >= 1) setOnlineNum(Number(onlineNums))
     // 消息框滚动到底部
     let chatRoom = document.querySelector('#chatRoom')
     if (chatRoom.scrollHeight > chatRoom.clientHeight) {
@@ -84,6 +95,7 @@ function Chat(props) {
   }
   return (
     <div className='chats'>
+      {onlineNum >= 1 && <div className='onlineNum'>在线人数：{onlineNum}</div>}
       <div id='chatRoom'>
         <div id='mesConts' dangerouslySetInnerHTML={{ __html: mesHistory }}>
           {/* {mesHistory} */}
@@ -106,7 +118,7 @@ function Chat(props) {
           value={mes}>
           消息
         </InputItem>
-        <Button onClick={sendMes}>发送</Button>
+        <Button type="ghost" onClick={sendMes}>发送</Button>
       </div>
       <div className='changeName'>
         <InputItem
@@ -123,7 +135,7 @@ function Chat(props) {
           value={nickName}>
           昵称
         </InputItem>
-        <Button onClick={() => changeNickName()}>输入昵称，点击进入房间</Button>
+        <Button type="ghost" onClick={() => changeNickName()}>输入昵称，点击进入房间</Button>
       </div>
     </div>
   )
@@ -132,15 +144,17 @@ function Chat(props) {
 function send(ioSocket, mesVal, nickName) {
   console.log(nickName, mesVal)
   if (!nickName || nickName === 'null') {
-    alert('请先输入昵称，再进入房间')
-    Toast.info('请先输入昵称，再进入房间 !!!', 1);
+    // alert('请先输入昵称，再进入房间')
+    Toast.info('请先输入昵称，再进入房间 !!!', 1)
     return
   }
   if (!!mesVal) {
-    ioSocket.send(mesVal)
+    // 添加防护措施(防止输入端植入代码)
+    let safeMes = mesVal.replace(/<[^<>]+>/g,'')
+    ioSocket.send(safeMes)
   } else {
     // alert('请输入消息')
-    Toast.info('请输入消息 !!!', 1);
+    Toast.info('请输入消息 !!!', 1)
   }
   // console.log(sayInput.value)
   // sayInput.value = ''

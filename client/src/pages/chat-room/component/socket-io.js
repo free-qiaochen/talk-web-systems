@@ -12,14 +12,17 @@ function socketEvents (ioSocket,addMes,ifinit) {
   })
   // 接收服务端的信息
   // 方式1
-  ioSocket.on('message', function (msg) {
+  ioSocket.on('message', function (msg,onlineNum) {
+    console.log(msg)
+    // const msg = msgs.split('&onlineCount=')[0]
+    // const num = msgs.split('&onlineCount=')[1]
     // 本人消息过滤，样式和内容过滤
     const nickName = sessionStorage.getItem('nickName') || null
-    console.log(nickName,'---nickNames',msg)
+    console.log(nickName,'---nickNames',msg,onlineNum)
     var className = msg.split('：')[0] === nickName ? 'mesRight' : 'mes'
     var message = className === 'mesRight' ? msg.replace(nickName + '：', '') : msg
     var newMess = `<p class="${className}">${message}</p>`
-    addMes(newMess)
+    addMes(newMess,onlineNum)
   })
   // 方式2????
   // ioSocket.on('news',function (msg) {
