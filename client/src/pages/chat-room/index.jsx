@@ -42,16 +42,27 @@ function Chat(props) {
   }, [])
   const comWillUnMount = () => {
     console.log('组件将销毁')
-    console.log(ioSocket, mes, nickName);
-    ioSocket.close()
+    // console.log(ioSocket, mes, nickName);
+    ioSocket.close()  // 断开socket 连接
   }
-  // 接收到服务端message ，显示
-  // @params val 新消息，onlineNum在线人数
-  const addMes = (val, onlineNums) => {
+  
+  /** 接收到服务端message ，显示消息
+   * @params val 新消息，onlineNum在线人数，
+   * leaveObj 有人(进入)离开对象信息
+   * 
+   *  */
+  const addMes = (val, onlineNums,leaveObj) => {
     console.log(mesHistory, val, onlineNums)
+    if (onlineNums >= 1) setOnlineNum(Number(onlineNums))
+    if (leaveObj && leaveObj.ifLeave === 'leave') {
+      Toast.info(`${leaveObj.name}：离开了！`)
+      return
+    } else if(leaveObj && leaveObj.ifLeave === 'in') {
+      Toast.info(`欢迎新朋友,请自定义个人昵称!`)
+      return
+    }
     lists += val
     setMesHistory(lists)
-    if (onlineNums >= 1) setOnlineNum(Number(onlineNums))
     // 消息框滚动到底部
     let chatRoom = document.querySelector('#chatRoom')
     if (chatRoom.scrollHeight > chatRoom.clientHeight) {

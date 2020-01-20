@@ -41,14 +41,14 @@ io.on('connection', function (socket) {
   socket.name = ++i
   onlineUsers[socket.name] = socket
   onlineCount++
-  // 发送消息给所有人
-  io.emit('message',`欢迎${socket.name}`,onlineCount)
+  // 发送消息给自己
+  socket.emit('takeCar',`${socket.name}`,onlineCount)
   // 監聽新用戶的退出
   socket.on('disconnect', function () {
     console.log('有人退出！');
     delete onlineUsers[socket.name]
     onlineCount--
-    socket.broadcast.emit('message',`${socket.name}：离开了`,onlineCount)
+    socket.broadcast.emit('leave',`${socket.name}`,onlineCount)
   })
   // 監聽用戶發佈的聊天內容
   socket.on('message', function (msg, type) {

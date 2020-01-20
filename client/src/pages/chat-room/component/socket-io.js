@@ -3,7 +3,7 @@
 // const ioSocket = io('http://47.104.107.19:5005/')
 
 // 监听socket.io 连接，接收消息等事件
-function socketEvents (ioSocket,addMes,ifinit) {
+function socketEvents (ioSocket, addMes, ifinit) {
   // const ioSocket = IO('http://47.104.107.19:5005/')
   // if (!ifinit) return
   // 监听连接服务器
@@ -12,17 +12,27 @@ function socketEvents (ioSocket,addMes,ifinit) {
   })
   // 接收服务端的信息
   // 方式1
-  ioSocket.on('message', function (msg,onlineNum) {
+  ioSocket.on('message', function (msg, onlineNum) {
     console.log(msg)
     // const msg = msgs.split('&onlineCount=')[0]
     // const num = msgs.split('&onlineCount=')[1]
     // 本人消息过滤，样式和内容过滤
     const nickName = sessionStorage.getItem('nickName') || null
-    console.log(nickName,'---nickNames',msg,onlineNum)
+    console.log(nickName, '---nickNames', msg, onlineNum)
     var className = msg.split('：')[0] === nickName ? 'mesRight' : 'mes'
     var message = className === 'mesRight' ? msg.replace(nickName + '：', '') : msg
     var newMess = `<p class="${className}">${message}</p>`
-    addMes(newMess,onlineNum)
+    addMes(newMess, onlineNum)
+  })
+  // 监听有人进入房间(上车)
+  ioSocket.on('takeCar', (name, onlineNum) => {
+    console.log('欢迎新同学加入！')
+    addMes('', onlineNum, { ifLeave: 'in', name })
+  })
+  // 监听有人离开的自定义事件
+  ioSocket.on('leave', (name, onlineNum) => {
+    console.log(`${name}:离开了`)
+    addMes('', onlineNum, { ifLeave: 'leave', name })
   })
   // 方式2????
   // ioSocket.on('news',function (msg) {
@@ -34,4 +44,4 @@ function socketEvents (ioSocket,addMes,ifinit) {
   })
 }
 
-export {socketEvents}
+export { socketEvents }
