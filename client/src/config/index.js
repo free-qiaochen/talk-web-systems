@@ -1,4 +1,4 @@
-export default global = {
+export default {
   mode:'local',
   serveUrl: {
     local: 'http://10.105.18.185:5005/',

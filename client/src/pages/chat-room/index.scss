@@ -28,7 +28,14 @@
       }
     }
   }
-
+  #curImg{
+    display: inline-block;
+    width: 200Px;
+    line-height: 50Px;
+    height: 50Px;
+    font-size: 14Px;
+    vertical-align: top;
+  }
   .changeName,
   .messText {
     padding: 10px 0;
