@@ -137,6 +137,42 @@ const mergeFileChunk = async (chunkDirs, fileName) => {
   // fse.rmdirSync(chunkDir)
   console.log('合成了')
 }
+// 合并切片
+/* const mergeFileChunk = async (chunkDirs, fileName) => {
+  let chunkDir = chunkDirs + '/'+fileName
+  //指定合成的文件名及位置
+  const totalPaths = TotalFileDir + '/' + '合成-' + fileName
+  // 目录不存在，创建目录
+  // if (!fse.existsSync(TotalFileDir)) {
+  //   fse.mkdirs(TotalFileDir);
+  // }
+  fse.ensureDirSync(TotalFileDir)
+  fse.ensureFileSync(totalPaths,'')
+  //生成合成的空文件
+  // fse.writeFileSync(totalPaths, '')
+  //读取切片文件目录，返回切片文件集合
+  const chunkPaths = fse.readdirSync(chunkDir)
+  //循环读取切片文件内容并合并进totalPaths中
+  chunkPaths.forEach((chunkPath,index) => {
+    console.log('合并：',index)
+    //获取单个切片文件目录
+    const chunkFilePath = `${chunkDir}/${chunkPath}`
+    //xxx/xxx/uploadFile/chunkFile/梁博-出现又离开.mp3-0
+    //同步按顺序读取文件切片，这样才能保证是按顺序将切片合成一整首歌
+    const data = fse.readFileSync(chunkFilePath)
+
+    //xxx/xxx/uploadFile/totalFile/梁博-出现又离开.mp3
+    //将每个文件片合进单一文件中
+    fse.appendFileSync(totalPaths, data);
+
+    //删除文件
+    // fse.unlinkSync(chunkFilePath);
+  });
+
+  //删除切片的目录
+  // fse.rmdirSync(chunkDir);
+
+} */
 
 // -----------
 

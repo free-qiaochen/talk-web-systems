@@ -3,13 +3,10 @@ import './index.scss'
 import IO from 'socket.io-client'
 import { socketEvents } from './component/socket-io'
 import { Toast, Button, InputItem } from 'antd-mobile'
-
-// Toast.info('This is a toast tips !!!', 1);
-
-// Toast.success('Load success !!!', 1);
-
 import globals from '../../config'
 import { getChartList } from '../../api/chart'
+import MyProgress from './component/process'
+import UploadFile from './component/upload'
 
 // let ifInit = true
 let ioSocket,mesLists
@@ -113,7 +110,10 @@ function Chat(props) {
     initHistoryList(20)
   }, [initHistoryList,addMes])
 
-  // didMount,可是又依赖其他变量，该钩子有问题，待修复，
+  /**
+   * didMount,可是又依赖其他变量，该钩子有问题，待修复，
+   * 添加依赖会有问题，
+   *  */
   useEffect(()=>{
     // 添加第二个参数[],表示无依赖，相当于didMount钩子
     // lists = ''
@@ -136,18 +136,14 @@ function Chat(props) {
   },[])
   return (
     <div className='chats'>
+      <MyProgress />
       {onlineNum >= 1 && <div className='onlineNum'>在线人数：{onlineNum}</div>}
       <div id='chatRoom'>
         <div id='mesConts' dangerouslySetInnerHTML={{ __html: mesHistorys }}>
           {/* {mesHistory} */}
         </div>
       </div>
-      <div className='mesImages'>
-        <input type='file' id='curImg' accept='*.jpe?g,*.png' />
-        <Button type='ghost' inline onClick={() => sendMes('img')}>
-          发送图片
-        </Button>
-      </div>
+      <UploadFile sendMes={sendMes} />
       <div className='messText'>
         <InputItem
           clear

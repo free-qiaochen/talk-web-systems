@@ -22,6 +22,9 @@ axios.interceptors.response.use(
 )
 
 export const getData = (url,data,method='get',ContentType='application/json')=>{
+  if (ContentType === 'application/x-www-form-urlencoded') {
+    // data = qs.stringify(data)
+  }
   let config = {
     url,
     data,

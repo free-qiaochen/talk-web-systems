@@ -21,6 +21,8 @@
   "author": "qiao",
   "license": "ISC",
   "dependencies": {
-    "mongoose": "^5.8.7"
+    "fs-extra": "^8.1.0",
+    "mongoose": "^5.8.7",
+    "multiparty": "^4.2.1"
   }
 }
