@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import './index.scss'
 import IO from 'socket.io-client'
 import { socketEvents } from './component/socket-io'
@@ -8,16 +8,17 @@ import { getChartList } from '../../api/chart'
 import MyProgress from './component/process'
 import UploadFile from './component/upload'
 
-// let ifInit = true
-let ioSocket,mesLists
+// let mesLists 
+let ioSocket
+
 function Chat(props) {
   const [mesHistorys, setMesHistorys] = useState('') // 历史消息
   const [mes, setMes] = useState() // 当前输入的消息
   const [nickName, setNickName] = useState() // 昵称
   const [onlineNum, setOnlineNum] = useState(1) // 在线人数
+  const latestMesList = useRef(mesHistorys)
   // console.log('---------', mesHistorys)
   // let autoFocusInst
-
 
   /** 接收到服务端message ，显示消息
    * @params val 新消息，onlineNum在线人数，
@@ -35,9 +36,14 @@ function Chat(props) {
         Toast.info(`欢迎新朋友,请自定义个人昵称!`)
         return
       }
-      console.log('这里取值mesHistorys有问题，mesHistorys:', mesHistorys)
-      mesLists = mesLists ? mesLists + val : val
-      // lists += val
+      console.log(
+        '这里取值mesHistorys有问题，mesHistorys:',
+        mesHistorys,
+        latestMesList.current
+      )
+      // mesLists = mesLists ? mesLists + val : val
+      // 有了hack处理后，可以不再组件外声明变量存储，可间接使用到最新state数据
+      const mesLists = latestMesList.current ? latestMesList.current + val : val
       // console.log('设置之前：', mesLists)
       setMesHistorys(mesLists)
       console.log('后：', mesHistorys)
@@ -53,20 +59,23 @@ function Chat(props) {
   /**发送消息
    * @params type--消息类型
    *  */
-  const sendMes = useCallback((type) => {
-    // console.log('---:',nickName, mes,mesHistorys)
-    if (!nickName || nickName === 'null') {
-      // alert('请先输入昵称，再进入房间')
-      Toast.info('请先输入昵称，再进入房间 !!!', 1)
-      return
-    }
-    if (type === 'img') {
-      sendImg(ioSocket, 'curImg', addMes, onlineNum)
-      return
-    }
-    sendText(ioSocket, mes)
-    setMes('')
-  },[addMes,mes,nickName,onlineNum])
+  const sendMes = useCallback(
+    type => {
+      // console.log('---:',nickName, mes,mesHistorys)
+      if (!nickName || nickName === 'null') {
+        // alert('请先输入昵称，再进入房间')
+        Toast.info('请先输入昵称，再进入房间 !!!', 1)
+        return
+      }
+      if (type === 'img') {
+        sendImg(ioSocket, 'curImg', addMes, onlineNum)
+        return
+      }
+      sendText(ioSocket, mes)
+      setMes('')
+    },
+    [addMes, mes, nickName, onlineNum]
+  )
   const changeNickName = useCallback(
     function(names) {
       let name = names || nickName
@@ -108,13 +117,16 @@ function Chat(props) {
   const inits = useCallback(() => {
     socketEvents(ioSocket, addMes)
     initHistoryList(20)
-  }, [initHistoryList,addMes])
-
+  }, [initHistoryList, addMes])
+  // hack for mesHistorys cannot read new value!
+  useEffect(() => {
+    latestMesList.current = mesHistorys
+  })
   /**
    * didMount,可是又依赖其他变量，该钩子有问题，待修复，
    * 添加依赖会有问题，
    *  */
-  useEffect(()=>{
+  useEffect(() => {
     // 添加第二个参数[],表示无依赖，相当于didMount钩子
     // lists = ''
     // 连接
@@ -133,7 +145,7 @@ function Chat(props) {
     console.log('connect')
     // 组件销毁调用函数
     return comWillUnMount
-  },[])
+  }, [])
   return (
     <div className='chats'>
       <MyProgress />
@@ -186,13 +198,13 @@ function Chat(props) {
   )
 }
 
-function comWillUnMount () {
+function comWillUnMount() {
   console.log('组件将销毁')
   // console.log(ioSocket, mes, nickName);
   ioSocket.close() // 断开socket 连接
 }
 // 消息框滚动到底部
-function scrollToBottom () {
+function scrollToBottom() {
   let chatRoom = document.querySelector('#chatRoom')
   if (chatRoom.scrollHeight > chatRoom.clientHeight) {
     //设置滚动条到最底部
@@ -230,7 +242,7 @@ function sendImg(ioSocket, imgsId, addMes, onlineNum) {
   reader.onload = function() {
     let imgs = { img: this.result, nickName: '' }
     ioSocket.emit('sendImg', imgs)
-    console.log(imgs)
+    // console.log(imgs)
     imgInput.value = ''
     Toast.hide()
     // 自己发送的图片本地回显
