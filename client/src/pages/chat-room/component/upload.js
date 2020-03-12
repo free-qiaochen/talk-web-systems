@@ -27,7 +27,7 @@ function UploadFile (props) {
       Toast.info('请先选择文件')
       return
     }
-    i = 0
+    receivedNum = 0
     if (fileDatas && fileDatas.type.includes('image')) {
       sendMes('img')
     } else {
@@ -81,12 +81,12 @@ function createFileChunk (files, chunkSize = 100 * 1024) {
 /* 
 * 
 */
-let i = 0
+let receivedNum = 0
 async function fetchBigFileData (file,chunkNumber) {
   let data = await uploadFile(file)
-  console.log(data)
-  ++i
-  if (i === chunkNumber) {
+  ++receivedNum
+  console.log(data,receivedNum)
+  if (receivedNum === chunkNumber) {
     await mergeFile()
     console.log('上传成功')
   }

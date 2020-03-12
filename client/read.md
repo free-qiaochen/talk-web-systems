@@ -1,3 +1,15 @@
 客户端功能点需求规划，主要实现思路：
 
+### 20200310-开始文件上传，切片上传功能
 
+目前切片上传，服务端合并文件，存在丢失情况，待优化；
+
+```js
+// 文件切片slice
+const fileChunk = files.slice(cur, cur + chunkSize)
+fileChunkList.push(fileChunk)
+// 切片后的文件挨个上传服务端
+
+```
+
+### 20200312--待完成功能： 文件断点续传，文件 hash 计算，性能提升；
