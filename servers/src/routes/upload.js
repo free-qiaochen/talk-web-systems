@@ -96,21 +96,23 @@ const mergeFileChunk = async (chunkDirs, fileName) => {
   fse.ensureDirSync(TotalFileDir)
   fse.ensureFileSync(totalPaths, '')
   // 读取切片文件目录，返回切片文件集合
-  const chunkPaths = fse.readdirSync(chunkDir)
+  let chunkPaths = fse.readdirSync(chunkDir)
   console.log(chunkPaths)
   // 循环读取切片文件内容并合并进totalPaths中--???合并有问题?????????????
-  // hack 处理，合并缺失
-  if (chunkPaths.length < clientChunkNumber) {
-    setTimeout(() => {
-      mergeFile(chunkPaths,chunkDir,totalPaths)
-    }, 2000)
-  }else{
-    mergeFile(chunkPaths,chunkDir,totalPaths)
-  }
+  mergeFile(chunkPaths,chunkDir,totalPaths)
 
 }
 // @params 切片文件集合，切片文件所在目录，合成文件地址
 function mergeFile (chunkPaths,chunkDir,totalPaths) {
+  // hack 处理，合并缺失,递归调用自己
+  if (chunkPaths.length < clientChunkNumber) {
+    setTimeout(() => {
+      const newchunkPaths = fse.readdirSync(chunkDir)
+      mergeFile(newchunkPaths,chunkDir,totalPaths)
+    }, 1000)
+    console.log(chunkPaths.length,clientChunkNumber,'切片缺失，再等等！待修复，递归1!')
+    return
+  }
   chunkPaths.forEach((chunkPath, index) => {
     console.log('合并：', index, chunkPaths.length)
     // 获取单个切片文件的目录
