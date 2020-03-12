@@ -23,6 +23,10 @@ function UploadFile (props) {
    *  */
   const sendFiles = useCallback(() => {
     console.log(fileDatas)
+    if (!fileDatas) {
+      Toast.info('请先选择文件')
+      return
+    }
     i = 0
     if (fileDatas && fileDatas.type.includes('image')) {
       sendMes('img')
