@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Toast, Button, InputItem } from 'antd-mobile'
 import { uploadFile, mergeFile } from '@/api/chart'
+import { promises } from 'dns'
 
 function UploadFile (props) {
   const { sendMes } = props
@@ -21,13 +22,13 @@ function UploadFile (props) {
   /**
    * 点击发送文件，分图片和其他文件
    *  */
-  const sendFiles = useCallback(() => {
+  const sendFiles = useCallback(async () => {
     console.log(fileDatas)
     if (!fileDatas) {
       Toast.info('请先选择文件')
       return
     }
-    receivedNum = 0
+    // receivedNum = 0
     if (fileDatas && fileDatas.type.includes('image')) {
       sendMes('img')
     } else {
@@ -36,7 +37,7 @@ function UploadFile (props) {
       const { splitFileList, chunkNumber } = createFileChunk(fileDatas)
       console.log(splitFileList)
       // 切片文件挨个发送给后端
-      splitFileList.forEach((file, index) => {
+      const fileChukList = splitFileList.map((file, index) => {
         const obj = new FormData()
         obj.append('chunk', file)  // 片文件
         // hash码，标识文件片？？？
@@ -46,8 +47,15 @@ function UploadFile (props) {
         // 文件片数，方便后端标识并合并
         obj.append('chunkNumber', chunkNumber + '')
         // 请求server，发送数据
-        fetchBigFileData(obj,chunkNumber)
+        // fetchBigFileData(obj,chunkNumber)
+        return {obj}
       });
+      const fetchList = fileChukList.map(({obj})=>{
+        uploadFile(obj)
+      })
+      await Promise.all(fetchList)
+      console.log('上传成功,开始合并')
+      await mergeFile()
     }
   }, [sendMes, fileDatas])
   return (
@@ -79,7 +87,7 @@ function createFileChunk (files, chunkSize = 100 * 1024) {
   return { splitFileList: fileChunkList, chunkNumber: length }
 }
 /* 
-* 
+* 合并请求有问题，待优化？？？？
 */
 let receivedNum = 0
 async function fetchBigFileData (file,chunkNumber) {
