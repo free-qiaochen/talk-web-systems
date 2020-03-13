@@ -3,7 +3,7 @@ var http = require('http').Server(app)
 var io = require('socket.io')(http)
 var fs = require('fs')
 const msgDb = require('./src/models/talk')
-const file_routers = require('./src/routes/upload')
+const file_routers = require('./src/routes/upload-2')
 
 
 // http 設置

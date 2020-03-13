@@ -34,7 +34,7 @@ function UploadFile (props) {
     } else {
       console.log('文件切片')
       // 获取文件切片
-      const { splitFileList, chunkNumber } = createFileChunk(fileDatas)
+      const { splitFileList, chunkNumber,chunkSize } = createFileChunk(fileDatas)
       console.log(splitFileList)
       // 切片文件挨个发送给后端
       const fileChukList = splitFileList.map((file, index) => {
@@ -50,12 +50,12 @@ function UploadFile (props) {
         // fetchBigFileData(obj,chunkNumber)
         return {obj}
       });
-      const fetchList = fileChukList.map(({obj})=>{
-        uploadFile(obj)
+      const fetchList = fileChukList.map(async ({obj})=>{
+        await uploadFile(obj)
       })
       await Promise.all(fetchList)
       console.log('上传成功,开始合并')
-      await mergeFile()
+      await mergeFileFunc(fileDatas.name,chunkSize)
     }
   }, [sendMes, fileDatas])
   return (
@@ -84,12 +84,12 @@ function createFileChunk (files, chunkSize = 100 * 1024) {
     fileChunkList.push(fileChunk)
     curIndex++
   }
-  return { splitFileList: fileChunkList, chunkNumber: length }
+  return { splitFileList: fileChunkList, chunkNumber: length,chunkSize }
 }
 /* 
-* 合并请求有问题，待优化？？？？
+* 合并请求有问题，1.0待优化？？？？
 */
-let receivedNum = 0
+/* let receivedNum = 0
 async function fetchBigFileData (file,chunkNumber) {
   let data = await uploadFile(file)
   ++receivedNum
@@ -98,4 +98,8 @@ async function fetchBigFileData (file,chunkNumber) {
     await mergeFile()
     console.log('上传成功')
   }
+} */
+async function mergeFileFunc(fileName,chunkSize) {
+  await mergeFile({curFile:fileName,chunkSize})
+  console.log('请求合并')
 }

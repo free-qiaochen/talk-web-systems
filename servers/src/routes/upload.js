@@ -34,6 +34,7 @@ routers.post('/upload-file', function (req, res) {
       clientChunkNumber = +fields.chunkNumber[0];
       //获取文件名称
       [fileName] = fields.fileName;
+      console.log('接收切片：',fileName)
       //本次文件的文件夹名称，如 xx/xx/uploadFile/chunkFile/梁博-出现又离开.mp3
       chunkDir = `${ChunkFileDir}/${fileName}`;
 
@@ -64,15 +65,16 @@ routers.post('/upload-file', function (req, res) {
       res.send("已接收文件片 " + hash)
 
     });
-
   } catch (err) {
-    // res.status(400).json(err)
-    res.send(err)
+    console.log('err--',err)
+    res.status(400).json(err)
+    // res.send(err)
   }
 })
 //合并文件
 routers.get('/merge', async (req, res) => {
   try {
+    console.log('合并文件传参--',fileName)
     await mergeFileChunk(ChunkFileDir, fileName)
     // res.status(200).json("合并文件成功!");
     res.send('合并文件成功!')
