@@ -11,11 +11,11 @@ const multiparty = require("multiparty")
 const ChunkFileDir = path.resolve(__dirname, "../../../", "uploadFile/chunkFile");
 //合成的文件的存储目录
 const TotalFileDir = path.resolve(__dirname, "../../../", "uploadFile/totalFile");
-let fileName = ''
-let serverChunkNumber = 0
-let clientChunkNumber = 0
-let chunkDir = ''
-let nameIndex = 0 //合成重复文件重命名后缀
+// let fileName = ''
+// let chunkDir = ''
+// let nameIndex = 0 //合成重复文件重命名后缀
+// let serverChunkNumber = 0
+// let clientChunkNumber = 0
 // 发送（接收）文件接口
 routers.post('/upload-file', function (req, res) {
   try {
@@ -35,9 +35,9 @@ routers.post('/upload-file', function (req, res) {
       //获取切片总数量
       clientChunkNumber = +fields.chunkNumber[0];
       //获取文件名称
-      [fileName] = fields.fileName;
+      const [fileName] = fields.fileName;
       //本次文件的文件夹名称，如 xx/xx/uploadFile/chunkFile/梁博-出现又离开.mp3
-      chunkDir = `${ChunkFileDir}/${fileName}`;
+      const chunkDir = `${ChunkFileDir}/${fileName}`;
 
       // 切片目录不存在，创建切片目录chunkDir
       if (!fse.existsSync(chunkDir)) {
@@ -51,16 +51,16 @@ routers.post('/upload-file', function (req, res) {
       //将每片文件移动进chunkDir下，添加await,异步过程
       await fse.move(chunk.path, `${chunkDir}/${hash}`);
       //server 端计算切片数量，
-      serverChunkNumber = serverChunkNumber + 1
+      // serverChunkNumber = serverChunkNumber + 1
       //当到数时，自动合并文件
-      if (clientChunkNumber === serverChunkNumber && serverChunkNumber !== 0) {
-        //这里方便测试，用 get 方法单独来 merge 文件
-        console.log('ifMerge', clientChunkNumber, serverChunkNumber)
-        // mergeFileChunk(ChunkFileDir,fileName)
-        serverChunkNumber = 0
-        // res.status(200).json('Done!')
-        // res.send('Done!')
-      }
+      // if (clientChunkNumber === serverChunkNumber && serverChunkNumber !== 0) {
+      //   //这里方便测试，用 get 方法单独来 merge 文件
+      //   console.log('ifMerge', clientChunkNumber, serverChunkNumber)
+      //   // mergeFileChunk(ChunkFileDir,fileName)
+      //   serverChunkNumber = 0
+      //   // res.status(200).json('Done!')
+      //   // res.send('Done!')
+      // }
       //这么写返回 client 会出现乱码
       console.log('切片已接收', hash)
       res.status(200).json("已接收文件片 " + hash);
@@ -81,7 +81,7 @@ routers.get('/merge', async (req, res) => {
   // 合并文件路径
   const filePath = path.resolve(TotalFileDir, `${curFile}`)
   try {
-    // curFile 当前文件名，chunkSize--切片大小
+    // filePath合并文件路径，curFile 当前文件名，chunkSize--切片大小
     await mergeFileChunk(filePath, curFile, chunkSize)
     // res.status(200).json("合并文件成功!");
     // res.send('合并文件成功!')
@@ -94,72 +94,57 @@ routers.get('/merge', async (req, res) => {
   }
 });
 
-// 功能函数
+
+/**
+ * 把切片文件六合并到指定路径下，
+ * @param {*} path 
+ * @param {*} writeStream 
+ */
 const pipeStream = (path,writeStream)=>{
-  
+  return new Promise(resolve=>{
+    // 
+    const readStream = fse.createReadStream(path);
+    readStream.on('end',()=>{
+      fse.unlinkSync(path)  // 读取结束后删除切片
+      console.log('读取结束后delete切片')
+      resolve()
+    })
+    // 
+    readStream.pipe(writeStream)
+  })
 }
 // 合并切片
-const mergeFileChunk = async (filePath, fileName, size) => {
+const mergeFileChunk = async (targetFile, fileName, size) => {
+  console.log('---:',targetFile, fileName, size)
+  // 切片文件目录,返回绝对路径
   const chunkDir = path.resolve(ChunkFileDir, fileName)
+  // 读取切片文件目录，返回切片文件集合
   const chunkPaths = await fse.readdir(chunkDir)
   // 根据切片下标进行排序，防止顺序错乱,???
   chunkPaths.sort((a, b) => a.split('-')[1] - b.split('-')[1])
-  await Promise.all(
-    chunkPaths.map((chunkPath,index)=>{
-      pipeStream()
-      // 在家
+  // 文件不存在就创建
+  fse.ensureFileSync(targetFile, '')
+  // 遍历切片进行合并
+  const mergeing = chunkPaths.map(async(chunkPath,index)=>{
+    const chunkFilePath = path.resolve(chunkDir,chunkPath)
+    // 并发合并,提高速度
+    const chunkFileStream = fse.createWriteStream(targetFile,{
+      start:index*size,
+      end:(index+1)*size
     })
-  )
+    const done = await pipeStream(chunkFilePath,chunkFileStream)
+    return done
+  })
+  // console.log('merge status:',mergeing)
+  await Promise.all(mergeing)
+  // 合并后删除切片的目录
+  console.log('delete:',chunkDir)
+  if (fse.existsSync(chunkDir)) {
+    console.log('存在chunkDir，')
+  }
+  fse.rmdirSync(chunkDir)
+  // fse.removeSync(chunkDir)
 }
-
-/* // 合并文件
-const mergeFileChunk = async (chunkDirs, fileName) => {
-  const chunkDir = chunkDirs + '/' + fileName
-  console.log(chunkDirs, '--', fileName)
-  // 指定合成文件名以及目录
-  let totalPaths = TotalFileDir + '/' + '合成-' + `${fileName}`
-  if (fse.existsSync(TotalFileDir + '/' + '合成-' + `${fileName}`)) {
-    console.log('文件已存在')
-    totalPaths = TotalFileDir + '/' + `${++nameIndex}--合成-${fileName}`
-    // return
-  }
-  // 目录，文件不存在就创建
-  fse.ensureDirSync(TotalFileDir)
-  fse.ensureFileSync(totalPaths, '')
-  // 读取切片文件目录，返回切片文件集合
-  let chunkPaths = fse.readdirSync(chunkDir)
-  console.log(chunkPaths)
-  // 循环读取切片文件内容并合并进totalPaths中--???合并有问题?????????????
-  mergeFile(chunkPaths,chunkDir,totalPaths)
-
-} */
-/* 
-// @params 切片文件集合，切片文件所在目录，合成文件地址
-function mergeFile (chunkPaths,chunkDir,totalPaths) {
-  // hack 处理，合并缺失,递归调用自己
-  if (chunkPaths.length < clientChunkNumber) {
-    setTimeout(() => {
-      const newchunkPaths = fse.readdirSync(chunkDir)
-      mergeFile(newchunkPaths,chunkDir,totalPaths)
-    }, 1000)
-    console.log(chunkPaths.length,clientChunkNumber,'切片缺失，再等等！待修复，递归1!')
-    return
-  }
-  chunkPaths.forEach((chunkPath, index) => {
-    console.log('合并：', index, chunkPaths.length)
-    // 获取单个切片文件的目录
-    const chunkFilePath = `${chunkDir}/${chunkPath}`
-    // 同步按顺序读取文件切片，保证文件正常合成
-    const data = fse.readFileSync(chunkFilePath)
-    // 将每个文件片合并进单一文件中
-    fse.appendFileSync(totalPaths, data)
-    // 删除片文件
-    // fse.unlinkSync(chunkFilePath)
-  });
-  // 删除切片目录
-  // fse.rmdirSync(chunkDir)
-  console.log('合成了')
-} */
 
 
 // -----------
