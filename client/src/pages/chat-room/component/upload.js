@@ -5,6 +5,9 @@ import { Toast, Button, } from 'antd-mobile'
 import { uploadFile, mergeFile } from '@/api/chart'
 // import { promises } from 'dns'
 import ClipboardJS from 'clipboard'
+import worker_script from './hash';
+var myWorker = new Worker(worker_script);
+
 
 function UploadFile (props) {
   const { sendMes } = props
@@ -37,7 +40,7 @@ function UploadFile (props) {
       // 获取文件切片
       const { splitFileList, chunkNumber, chunkSize } = createFileChunk(fileDatas)
       console.log(splitFileList)
-      // 切片文件挨个发送给后端
+      // 遍历切片集合，切片文件挨个发送给后端
       const fileChukList = splitFileList.map((file, index) => {
         const obj = new FormData()
         obj.append('chunk', file)  // 片文件
@@ -47,8 +50,7 @@ function UploadFile (props) {
         obj.append('fileName', fileDatas.name)
         // 文件片数，方便后端标识并合并
         obj.append('chunkNumber', chunkNumber + '')
-        // 请求server，发送数据
-        // fetchBigFileData(obj,chunkNumber)
+        // 生成文件hash
         return { obj }
       });
       const fetchList = fileChukList.map(async ({ obj }) => {
@@ -59,6 +61,7 @@ function UploadFile (props) {
       await mergeFileFunc(fileDatas.name, chunkSize)
     }
   }, [sendMes, fileDatas])
+
   // 赋值粘贴板
   const copyFunc = (className) => {
     let clipboard = new ClipboardJS(className);
@@ -76,6 +79,10 @@ function UploadFile (props) {
   useEffect(() => {
     console.log('didMount?')
     copyFunc('.copyText')
+    myWorker.onmessage = (m) => {
+      console.log("msg from worker: ", m.data);
+    };
+    myWorker.postMessage('im from main');
   }, [])
   return (
     <div className='mesImages'>
