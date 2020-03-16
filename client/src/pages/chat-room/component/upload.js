@@ -1,9 +1,10 @@
 // 文件上传，图片上传，切片，大文件，进度，优化速度
 
 import React, { useEffect, useState, useCallback } from 'react'
-import { Toast, Button, InputItem } from 'antd-mobile'
+import { Toast, Button, } from 'antd-mobile'
 import { uploadFile, mergeFile } from '@/api/chart'
-import { promises } from 'dns'
+// import { promises } from 'dns'
+import ClipboardJS from 'clipboard'
 
 function UploadFile (props) {
   const { sendMes } = props
@@ -12,7 +13,7 @@ function UploadFile (props) {
    *  选择文件变化，更新数据
    *  */
   const getFile = useCallback((e) => {
-    e.persist()
+    e.persist() // react hack
     const [file] = e.target.files
     if (!file) {
       return
@@ -34,7 +35,7 @@ function UploadFile (props) {
     } else {
       console.log('文件切片')
       // 获取文件切片
-      const { splitFileList, chunkNumber,chunkSize } = createFileChunk(fileDatas)
+      const { splitFileList, chunkNumber, chunkSize } = createFileChunk(fileDatas)
       console.log(splitFileList)
       // 切片文件挨个发送给后端
       const fileChukList = splitFileList.map((file, index) => {
@@ -48,22 +49,44 @@ function UploadFile (props) {
         obj.append('chunkNumber', chunkNumber + '')
         // 请求server，发送数据
         // fetchBigFileData(obj,chunkNumber)
-        return {obj}
+        return { obj }
       });
-      const fetchList = fileChukList.map(async ({obj})=>{
+      const fetchList = fileChukList.map(async ({ obj }) => {
         await uploadFile(obj)
       })
       await Promise.all(fetchList)
       console.log('上传成功,开始合并')
-      await mergeFileFunc(fileDatas.name,chunkSize)
+      await mergeFileFunc(fileDatas.name, chunkSize)
     }
   }, [sendMes, fileDatas])
+  // 赋值粘贴板
+  const copyFunc = (className) => {
+    let clipboard = new ClipboardJS(className);
+    clipboard.on('success', function (e) {
+      console.info('Action:', e.action);
+      console.info('Text:', e.text);
+      console.info('Trigger:', e.trigger);
+      e.clearSelection();
+    });
+    clipboard.on('error', function (e) {
+      console.error('Action:', e.action);
+      console.error('Trigger:', e.trigger);
+    });
+  }
+  useEffect(() => {
+    console.log('didMount?')
+    copyFunc('.copyText')
+  }, [])
   return (
     <div className='mesImages'>
       <input type='file' id='curImg' accept='*.jpe?g,*.png' onChange={(e) => { getFile(e) }} />
       <Button type='ghost' inline onClick={sendFiles}>
         发送图片
       </Button>
+      <span className="copyText" data-clipboard-text="Just because you can doesn't mean you should — clipboard.js">copy</span>
+      {/* <button class="btn" data-clipboard-action="cut" data-clipboard-target="#bar">
+        Cut to clipboard
+      </button> */}
     </div>
   )
 }
@@ -84,7 +107,7 @@ function createFileChunk (files, chunkSize = 100 * 1024) {
     fileChunkList.push(fileChunk)
     curIndex++
   }
-  return { splitFileList: fileChunkList, chunkNumber: length,chunkSize }
+  return { splitFileList: fileChunkList, chunkNumber: length, chunkSize }
 }
 /* 
 * 合并请求有问题，1.0待优化？？？？
@@ -99,7 +122,7 @@ async function fetchBigFileData (file,chunkNumber) {
     console.log('上传成功')
   }
 } */
-async function mergeFileFunc(fileName,chunkSize) {
-  await mergeFile({curFile:fileName,chunkSize})
+async function mergeFileFunc (fileName, chunkSize) {
+  await mergeFile({ curFile: fileName, chunkSize })
   console.log('请求合并')
 }
