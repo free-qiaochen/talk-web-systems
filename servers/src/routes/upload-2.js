@@ -11,11 +11,19 @@ const multiparty = require("multiparty")
 const ChunkFileDir = path.resolve(__dirname, "../../../", "uploadFile/chunkFile");
 //合成的文件的存储目录
 const TotalFileDir = path.resolve(__dirname, "../../../", "uploadFile/totalFile");
-// let fileName = ''
-// let chunkDir = ''
-// let nameIndex = 0 //合成重复文件重命名后缀
-// let serverChunkNumber = 0
-// let clientChunkNumber = 0
+
+// 
+const resolvePost = req=>{
+  new Promise(resolve=>{
+    let chunk = ''
+    req.on('data',data=>{
+      chunk+=data
+    })
+    req.on('end',()=>{
+      resolve(JSON.parse(chunk))
+    })
+  })
+}
 // 发送（接收）文件接口
 routers.post('/upload-file', function (req, res) {
   try {
@@ -26,16 +34,19 @@ routers.post('/upload-file', function (req, res) {
       if (err) {
         return;
       }
+      console.log('fields:',fields)
+      console.log('files:',files)
       //chunk:{
       // path:存储临时文件的路径,
       // size:临时文件的大小,
       // }
       const [chunk] = files.chunk;
-      const [hash] = fields.hash;
+      const [hash] = fields.fileHash;
       //获取切片总数量
       clientChunkNumber = +fields.chunkNumber[0];
       //获取文件名称
-      const [fileName] = fields.fileName;
+      // const [fileName] = fields.fileName;
+      const fileName = String(fields.fileHash[0]).split('-')[0];
       //本次文件的文件夹名称，如 xx/xx/uploadFile/chunkFile/梁博-出现又离开.mp3
       const chunkDir = `${ChunkFileDir}/${fileName}`;
 
@@ -76,8 +87,9 @@ routers.post('/upload-file', function (req, res) {
 //合并文件
 routers.get('/merge', async (req, res) => {
   console.log(req.query)
-  const { curFile, chunkSize } = req.query
-  console.log(curFile, chunkSize)
+  const { curFile, chunkSize,oldName } = req.query
+  console.log(curFile, chunkSize,oldName)
+  // oldName 待用！！！！！！
   // 合并文件路径
   const filePath = path.resolve(TotalFileDir, `${curFile}`)
   try {
@@ -93,7 +105,28 @@ routers.get('/merge', async (req, res) => {
     res.send('err404!')
   }
 });
-
+// 提取文件后缀名
+const extractExt = fileName=>{
+  return fileName.slice(fileName.lastIndexOf('.'),fileName.length)
+}
+/**
+ * 验证文件是否已经上传
+ * @param {*} fileName 
+ * @param {*} fileHash 
+ */
+routers.get('/verify',async(req,res)=>{
+  const {fileName,fileHash} = req.query
+  const ext = extractExt(fileName)
+  const filePath = path.resolve(TotalFileDir,`${fileHash}${ext}`)
+  console.log('确认文件存在：',filePath)
+  let txt
+  if (fse.existsSync(filePath)) {
+    txt = JSON.stringify({shouldUpload:false})
+  }else{
+    txt = JSON.stringify({shouldUpload:true})
+  }
+  res.end(txt)
+})
 
 /**
  * 把切片文件六合并到指定路径下，
@@ -116,8 +149,11 @@ const pipeStream = (path,writeStream)=>{
 // 合并切片
 const mergeFileChunk = async (targetFile, fileName, size) => {
   console.log('---:',targetFile, fileName, size)
+  // 处理切片的存储目录，hash名字，确保去除后缀
+  const hashName = fileName.includes('.') ? fileName.split('.')[0] : fileName
   // 切片文件目录,返回绝对路径
-  const chunkDir = path.resolve(ChunkFileDir, fileName)
+  const chunkDir = path.resolve(ChunkFileDir, hashName)
+  console.log('读取到切片缓存的目录：',chunkDir)
   // 读取切片文件目录，返回切片文件集合
   const chunkPaths = await fse.readdir(chunkDir)
   // 根据切片下标进行排序，防止顺序错乱,???

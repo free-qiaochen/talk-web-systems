@@ -7,6 +7,8 @@ export const getChartList = (data) => getData('/chat',data)
 export const uploadFile = (data) => getData('/file/upload-file',data,'post','application/x-www-form-urlencoded')
 // 发送合并请求
 export const mergeFile = (data) => getData('/file/merge',data)
+// 验证文件是否已发送
+export const ifUpload = (data) => getData('/file/verify',data)
 /* export const getChartList = () => {
   let xhr = new XMLHttpRequest()
   xhr.open('get', 'http://10.105.18.185:5005/chat', true)

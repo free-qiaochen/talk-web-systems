@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { Toast, Button, } from 'antd-mobile'
-import { uploadFile, mergeFile } from '@/api/chart'
+import global from '@/config'
+import { uploadFile, mergeFile,ifUpload } from '@/api/chart'
 // import { promises } from 'dns'
 import ClipboardJS from 'clipboard'
-import worker_script from './hash';
-var myWorker = new Worker(worker_script);
+// import worker_script from '/hash.js';
+var myWorker = new Worker('/hash.js');
 
 
 function UploadFile (props) {
@@ -40,25 +41,40 @@ function UploadFile (props) {
       // 获取文件切片
       const { splitFileList, chunkNumber, chunkSize } = createFileChunk(fileDatas)
       console.log(splitFileList)
-      // 遍历切片集合，切片文件挨个发送给后端
-      const fileChukList = splitFileList.map((file, index) => {
+      // ？？？计算文件hash，为何不在切片之前
+      const fileHash = await calculateHash(splitFileList)
+      console.log(fileHash)
+      const fileName = fileDatas.name
+      // 校验当前文件是否已经发送过
+      const {shouldUpload} = await verifyUpload(fileName,fileHash)
+      console.log('shouldUpload',shouldUpload)
+      if (!shouldUpload) {
+        Toast.info('文件秒传成功，文件已存在了！')
+        return
+      }
+      // 遍历切片集合，
+      const fileChunkList = splitFileList.map((file, index) => {
         const obj = new FormData()
         obj.append('chunk', file)  // 片文件
         // hash码，标识文件片？？？
-        obj.append('hash', fileDatas.name + '-' + index)
+        obj.append('hash', fileName + '-' + index)
+        obj.append('fileHash', fileHash + '-' + index)
         // 上传文件的名称
-        obj.append('fileName', fileDatas.name)
+        obj.append('fileName', fileName)
         // 文件片数，方便后端标识并合并
         obj.append('chunkNumber', chunkNumber + '')
         // 生成文件hash
         return { obj }
       });
-      const fetchList = fileChukList.map(async ({ obj }) => {
+      // 切片文件集合挨个发送给后端
+      const fetchList = fileChunkList.map(async ({ obj }) => {
         await uploadFile(obj)
       })
       await Promise.all(fetchList)
       console.log('上传成功,开始合并')
-      await mergeFileFunc(fileDatas.name, chunkSize)
+      // fileName 改为 fileHash
+      const fileType = fileName.slice(fileName.lastIndexOf('.'),fileName.length)
+      await mergeFileFunc(fileHash+fileType, chunkSize,fileName)
     }
   }, [sendMes, fileDatas])
 
@@ -90,6 +106,7 @@ function UploadFile (props) {
       <Button type='ghost' inline onClick={sendFiles}>
         发送图片
       </Button>
+      <span className="pause" onClick={pauseUpload}>暂停</span>
       <span className="copyText" data-clipboard-text="Just because you can doesn't mean you should — clipboard.js">copy</span>
       {/* <button class="btn" data-clipboard-action="cut" data-clipboard-target="#bar">
         Cut to clipboard
@@ -100,7 +117,7 @@ function UploadFile (props) {
 
 export default UploadFile
 /**
- *文件切片 ,默认10Kb
+ *文件切片 ,默认100Kb
  * @params files--目标文件，chunkSize--切片大小
  *  */
 function createFileChunk (files, chunkSize = 100 * 1024) {
@@ -116,20 +133,49 @@ function createFileChunk (files, chunkSize = 100 * 1024) {
   }
   return { splitFileList: fileChunkList, chunkNumber: length, chunkSize }
 }
-/* 
-* 合并请求有问题，1.0待优化？？？？
-*/
-/* let receivedNum = 0
-async function fetchBigFileData (file,chunkNumber) {
-  let data = await uploadFile(file)
-  ++receivedNum
-  console.log(data,receivedNum)
-  if (receivedNum === chunkNumber) {
-    await mergeFile()
-    console.log('上传成功')
-  }
-} */
-async function mergeFileFunc (fileName, chunkSize) {
-  await mergeFile({ curFile: fileName, chunkSize })
+/**
+ * 请求api，进行文件合并
+ * @param {*} fileName 
+ * @param {*} chunkSize 
+ */
+async function mergeFileFunc (fileName, chunkSize,oldName) {
+  await mergeFile({ curFile: fileName, chunkSize,oldName })
   console.log('请求合并')
+}
+/**
+ * 计算文件hash
+ * @param {*} fileChunkList 文件切片集合
+ * @return hash
+ */
+function calculateHash(fileChunkList) {
+  return new Promise(resolve=>{
+    let worker = new Worker('/hash.js')
+    worker.postMessage({fileChunkList})
+    worker.onmessage = e=>{
+      const {percentage,hash}=e.data
+      console.log('percentage:',percentage)
+      // this.hashPercentage=percentage
+      if (hash) {
+        resolve(hash)
+      }
+    }
+  })
+}
+/**
+ * 文件秒传：向服务端验证文件是否上传
+ * @param {*} fileName 
+ * @param {*} fileHash 
+ * @return boolean
+ */
+async function verifyUpload(fileName,fileHash) {
+  const data = await ifUpload({fileName,fileHash})
+  console.log(data)
+  return data
+}
+// 暂停上传
+function pauseUpload(params) {
+  console.log('pause upload')
+  global.requestList.forEach(xhr => {
+    xhr.cancel()
+  });
 }
