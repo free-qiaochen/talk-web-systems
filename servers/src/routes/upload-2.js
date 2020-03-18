@@ -109,8 +109,14 @@ routers.get('/merge', async (req, res) => {
 const extractExt = fileName=>{
   return fileName.slice(fileName.lastIndexOf('.'),fileName.length)
 }
+// 返回已经上传切片名字的列表
+const createUploadedList = async fileHash=>{
+  // 当前文件的切片目录
+  const curChunkfileDir = path.resolve(ChunkFileDir,fileHash)
+  return fse.existsSync(curChunkfileDir) ? await fse.readdir(curChunkfileDir):[]
+}
 /**
- * 验证文件是否已经上传
+ * 验证文件上传情况，[已上传,未上传(部分上传)]
  * @param {*} fileName 
  * @param {*} fileHash 
  */
@@ -123,7 +129,10 @@ routers.get('/verify',async(req,res)=>{
   if (fse.existsSync(filePath)) {
     txt = JSON.stringify({shouldUpload:false})
   }else{
-    txt = JSON.stringify({shouldUpload:true})
+    txt = JSON.stringify({
+      shouldUpload:true,
+      uploadedList:await createUploadedList()
+    })
   }
   res.end(txt)
 })

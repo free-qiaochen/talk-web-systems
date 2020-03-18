@@ -66,6 +66,8 @@ function UploadFile (props) {
         // 生成文件hash
         return { obj }
       });
+      // ???????????切片续传待处理？？？？？？？？
+      
       // 切片文件集合挨个发送给后端
       const fetchList = fileChunkList.map(async ({ obj }) => {
         await uploadFile(obj)
@@ -106,7 +108,8 @@ function UploadFile (props) {
       <Button type='ghost' inline onClick={sendFiles}>
         发送图片
       </Button>
-      <span className="pause" onClick={pauseUpload}>暂停</span>
+      <Button className="pause" onClick={pauseUpload}>暂停</Button>
+      <Button className="goOn" onClick={sendFiles}>恢复</Button>
       <span className="copyText" data-clipboard-text="Just because you can doesn't mean you should — clipboard.js">copy</span>
       {/* <button class="btn" data-clipboard-action="cut" data-clipboard-target="#bar">
         Cut to clipboard
@@ -178,4 +181,10 @@ function pauseUpload(params) {
   global.requestList.forEach(xhr => {
     xhr.cancel()
   });
+  global.requestList = []
+}
+// 恢复上传??????合并到发送按钮上，否则是拆分上传方法
+async function continueUpload(fileName,fileHash) {
+  const {uploadedList} = await verifyUpload(fileName,fileHash)
+  return uploadedList
 }
