@@ -131,7 +131,7 @@ routers.get('/verify',async(req,res)=>{
   }else{
     txt = JSON.stringify({
       shouldUpload:true,
-      uploadedList:await createUploadedList()
+      uploadedList:await createUploadedList(fileHash)
     })
   }
   res.end(txt)

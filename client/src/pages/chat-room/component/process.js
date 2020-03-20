@@ -3,7 +3,7 @@ import { Progress } from 'antd-mobile';
 
 export default class MyProgress extends React.Component {
   state = {
-    percent: 50,
+    // percent: 50,
   };
   add = () => {
     let p = this.state.percent + 10;
@@ -13,7 +13,7 @@ export default class MyProgress extends React.Component {
     this.setState({ percent: p });
   }
   render() {
-    const { percent } = this.state;
+    const { percent } = this.props;
     return (
       <div className="progress-container">
         <Progress percent={percent} position="fixed" />

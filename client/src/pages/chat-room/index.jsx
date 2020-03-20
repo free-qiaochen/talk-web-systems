@@ -16,6 +16,7 @@ function Chat(props) {
   const [mes, setMes] = useState() // 当前输入的消息
   const [nickName, setNickName] = useState() // 昵称
   const [onlineNum, setOnlineNum] = useState(1) // 在线人数
+  const [percent,setPercent] = useState(0)
   const latestMesList = useRef(mesHistorys)
   // console.log('---------', mesHistorys)
   // let autoFocusInst
@@ -148,14 +149,14 @@ function Chat(props) {
   }, [])
   return (
     <div className='chats'>
-      <MyProgress />
+      <MyProgress percent={percent} />
       {onlineNum >= 1 && <div className='onlineNum'>在线人数：{onlineNum}</div>}
       <div id='chatRoom'>
         <div id='mesConts' dangerouslySetInnerHTML={{ __html: mesHistorys }}>
           {/* {mesHistory} */}
         </div>
       </div>
-      <UploadFile sendMes={sendMes} />
+      <UploadFile sendMes={sendMes} changeProcess={(val)=>setPercent(val)} />
       <div className='messText'>
         <InputItem
           clear
