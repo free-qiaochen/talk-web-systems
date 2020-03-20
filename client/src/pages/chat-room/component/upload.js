@@ -10,23 +10,26 @@ import ClipboardJS from 'clipboard'
 var myWorker = new Worker('/hash.js')
 
 let a = 0
-function UploadFile(props) {
+function UploadFile (props) {
   const { sendMes, changeProcess } = props
   const [fileDatas, setFileDatas] = useState()
-  const [chunkFileMes, setChunkFileMes] = useState()
-  const [uploading,setUploading] = useState(false)
+  const [chunkFileMes, setChunkFileMes] = useState({})
+  const [uploading, setUploading] = useState(false)
   /**
    *  选择文件变化，更新数据
    *  */
-  const getFile = useCallback(e => {
-    e.persist() // react hack
-    const [file] = e.target.files
-    if (!file) {
-      return
-    }
-    setFileDatas(file)
-    changeProcess(0)
-  }, [changeProcess])
+  const getFile = useCallback(
+    e => {
+      e.persist() // react hack
+      const [file] = e.target.files
+      if (!file) {
+        return
+      }
+      setFileDatas(file)
+      changeProcess(0)
+    },
+    [changeProcess]
+  )
   /**
    * 点击发送文件，分图片和其他文件
    *  */
@@ -52,7 +55,11 @@ function UploadFile(props) {
         )
         console.log(splitFileList)
         // ？？？计算文件hash，为何不在切片之前
-        const fileHash = await calculateHash(splitFileList, changeProcess,setUploading)
+        const fileHash = await calculateHash(
+          splitFileList,
+          changeProcess,
+          setUploading
+        )
         setUploading(true)
         console.log(fileHash)
         // 数据
@@ -80,14 +87,12 @@ function UploadFile(props) {
           Toast.info('文件秒传成功，文件已存在了！')
           return
         }
+        // ??待优化,取值有问题？？
+        console.log('chunkFileMes:',chunkFileMes)
         // 切片上传功能函数
         uploadFunc(
-          uploadedList,
-          chunkLists,
-          chunkNumber,
-          fileName,
-          fileHash,
-          chunkSize
+          uploadedList, chunkLists, chunkNumber, fileHash, chunkSize,
+          fileName
         )
       }
     },
@@ -97,13 +102,13 @@ function UploadFile(props) {
   // 赋值粘贴板
   const copyFunc = className => {
     let clipboard = new ClipboardJS(className)
-    clipboard.on('success', function(e) {
+    clipboard.on('success', function (e) {
       console.info('Action:', e.action)
       console.info('Text:', e.text)
       console.info('Trigger:', e.trigger)
       e.clearSelection()
     })
-    clipboard.on('error', function(e) {
+    clipboard.on('error', function (e) {
       console.error('Action:', e.action)
       console.error('Trigger:', e.trigger)
     })
@@ -135,14 +140,16 @@ function UploadFile(props) {
         发送图片
       </Button>
       {/* <Button onClick={testPercent}>测试percent</Button> */}
-      {uploading && <div className='uploadOption'>
-        <Button className='pause' inline onClick={pauseUpload}>
-          暂停
-        </Button>
-        <Button className='goOn' inline onClick={() => sendFiles('continue')}>
-          恢复
-        </Button>
-      </div>}
+      {uploading && (
+        <div className='uploadOption'>
+          <Button className='pause' inline onClick={pauseUpload}>
+            暂停
+          </Button>
+          <Button className='goOn' inline onClick={() => sendFiles('continue')}>
+            恢复
+          </Button>
+        </div>
+      )}
       <span
         className='copyText'
         data-clipboard-text="Just because you can doesn't mean you should — clipboard.js">
@@ -160,7 +167,7 @@ export default UploadFile
  *文件切片 ,默认100Kb
  * @params files--目标文件，chunkSize--切片大小
  *  */
-function createFileChunk(files, chunkSize = 100 * 1024) {
+function createFileChunk (files, chunkSize = 10000 * 1024) {
   const fileChunkList = []
   // 向上取整
   const length = Math.ceil(files.size / chunkSize)
@@ -178,7 +185,7 @@ function createFileChunk(files, chunkSize = 100 * 1024) {
  * @param {*} fileName
  * @param {*} chunkSize
  */
-async function mergeFileFunc(fileName, chunkSize, oldName) {
+async function mergeFileFunc (fileName, chunkSize, oldName) {
   console.log('请求合并')
   let data = await mergeFile({ curFile: fileName, chunkSize, oldName })
   console.log(data && data.message)
@@ -188,7 +195,7 @@ async function mergeFileFunc(fileName, chunkSize, oldName) {
  * @param {*} fileChunkList 文件切片集合,changeProcess进度,setUploading上传状态
  * @return hash
  */
-function calculateHash(fileChunkList, changeProcess,setUploading) {
+function calculateHash (fileChunkList, changeProcess, setUploading) {
   setUploading(false)
   return new Promise(resolve => {
     let worker = new Worker('/hash.js')
@@ -212,14 +219,8 @@ function calculateHash(fileChunkList, changeProcess,setUploading) {
  * @param {*} fileHash 文件hash（spark-md5）
  * @param {*} chunkSize 切片大小
  */
-async function uploadFunc(
-  uploadedList = [],
-  splitFileList,
-  chunkNumber,
-  fileName,
-  fileHash,
-  chunkSize
-) {
+async function uploadFunc (uploadedList = [], splitFileList, chunkNumber, fileHash, chunkSize, fileName) {
+  // const { splitFileList, chunkNumber, fileHash, chunkSize } = chunkFileMes
   // 遍历切片集合，
   const Lists = splitFileList.filter(({ hash }) => !uploadedList.includes(hash))
   console.log(splitFileList, uploadedList, Lists)
@@ -238,8 +239,9 @@ async function uploadFunc(
     return { obj }
   })
   // 切片文件集合挨个发送给后端
-  const fetchList = fileChunkList.map(async ({ obj }) => {
-    await uploadFile(obj)
+  const fetchList = fileChunkList.map(async ({ obj }, index) => {
+    await uploadFile(obj, processCalc,splitFileList[index])
+    // 上传进度
   })
   await Promise.all(fetchList)
   console.log('上传成功,开始合并')
@@ -247,19 +249,25 @@ async function uploadFunc(
   const fileType = fileName.slice(fileName.lastIndexOf('.'), fileName.length)
   await mergeFileFunc(fileHash + fileType, chunkSize, fileName)
 }
+// 计算文件上传进度
+function processCalc (val) {
+  // 当前片的进度
+  console.log(val)
+  // return processCalc
+}
 /**
  * 文件秒传：向服务端验证文件是否上传
  * @param {*} fileName
  * @param {*} fileHash
  * @return boolean
  */
-async function verifyUpload(fileName, fileHash) {
+async function verifyUpload (fileName, fileHash) {
   const data = await ifUpload({ fileName, fileHash })
   console.log(data)
   return data
 }
 // 暂停上传
-function pauseUpload(params) {
+function pauseUpload (params) {
   console.log('pause upload')
   global.requestList.forEach(xhr => {
     xhr.cancel()
@@ -267,7 +275,7 @@ function pauseUpload(params) {
   global.requestList = []
 }
 // 恢复上传??????合并到发送按钮上，否则是拆分上传方法
-async function continueUpload(chunkFileMes, fileName) {
+async function continueUpload (chunkFileMes, fileName) {
   const { splitFileList, chunkNumber, fileHash, chunkSize } = chunkFileMes
   const { uploadedList, shouldUpload } = await verifyUpload(fileName, fileHash)
   if (!shouldUpload) {
@@ -275,12 +283,8 @@ async function continueUpload(chunkFileMes, fileName) {
     return
   }
   await uploadFunc(
-    uploadedList,
-    splitFileList,
-    chunkNumber,
+    uploadedList, splitFileList, chunkNumber, fileHash, chunkSize,
     fileName,
-    fileHash,
-    chunkSize
   )
   return uploadedList
 }

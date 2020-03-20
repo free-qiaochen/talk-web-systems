@@ -14,7 +14,7 @@ axios.interceptors.request.use(
 // 响应拦截器
 axios.interceptors.response.use(
   response => {
-    if (response.data.code && response.data.code ===500) {
+    if (response.data.code && response.data.code === 500) {
       return Promise.reject()
     }
     return response.data
@@ -23,10 +23,10 @@ axios.interceptors.response.use(
 )
 
 // 取消请求方法
-const cancelToken = ()=>{
-  return new axios.CancelToken(cancel=>{
+const cancelToken = () => {
+  return new axios.CancelToken(cancel => {
     // cancel 就是取消请求的方法
-    global.requestList.push({cancel})
+    global.requestList.push({ cancel })
   })
 }
 /**
@@ -36,21 +36,30 @@ const cancelToken = ()=>{
  * @param {*} data 
  * @param {*} method 
  * @param {*} ContentType 
- */ 
-export const getData = (url,data,method='get',ContentType='application/json')=>{
+ */
+export const getData = (url, data, method = 'get', ContentType = 'application/json',upProcess,upItem) => {
   if (ContentType === 'application/x-www-form-urlencoded') {
     // data = qs.stringify(data)
   }
   let config = {
     url,
     data,
-    method:method.toLowerCase(),
-    headers:{
-      'content-Type':ContentType
+    method: method.toLowerCase(),
+    headers: {
+      'content-Type': ContentType
     },
-    cancelToken:cancelToken(),
+    onUploadProgress: function (progressEvent) {  // 上传进度
+      // let {loaded,total} = progressEvent
+      // console.log(loaded,total,progressEvent)
+      let complete = (progressEvent.loaded / progressEvent.total * 100 | 0)
+      upItem.percentage = complete
+      upProcess(upItem)
+      console.log('上传 ' + complete) // 单次上传文件太小会导致总是100，来不及
+      return progressEvent
+    },
+    cancelToken: cancelToken(), // 暂停上传
   }
-  if (method.toLowerCase()==='get') {
+  if (method.toLowerCase() === 'get') {
     config.params = data
   }
   return axios(config)

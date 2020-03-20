@@ -16,7 +16,7 @@ export default class MyProgress extends React.Component {
     const { percent } = this.props;
     return (
       <div className="progress-container">
-        <Progress percent={percent} position="fixed" />
+        {percent>0 && <Progress percent={percent} position="fixed" />}
         {/* <div style={{ height: 18 }} /> */}
         {/* <Progress percent={40} position="normal" unfilled={false} appearTransition /> */}
         {/* <WingBlank>

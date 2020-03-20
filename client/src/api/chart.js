@@ -4,7 +4,7 @@ import { getData } from './http'
 export const getChartList = (data) => getData('/chat',data)
 
 // 发送文件（大文件）
-export const uploadFile = (data) => getData('/file/upload-file',data,'post','application/x-www-form-urlencoded')
+export const uploadFile = (data,processfunc,upItem) => getData('/file/upload-file',data,'post','application/x-www-form-urlencoded',processfunc,upItem)
 // 发送合并请求
 export const mergeFile = (data) => getData('/file/merge',data)
 // 验证文件是否已发送

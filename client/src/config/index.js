@@ -10,5 +10,6 @@ export default {
     let isProduction = process.env.NODE_ENV === 'production'
     return isProduction ? this.serveUrl['server'] : this.serveUrl[this.mode]
   },
-  requestList:[]
+  requestList:[],
+  fileUploadProcess:0,  // 0-100,
 }

@@ -1,3 +1,7 @@
+/**
+ * 该文件模块暂时无用，因开发打包运行sparkmd5报错，待后续想办法？？？？？？？？？？？
+ */
+
 import SparkMd5 from 'spark-md5'
 
 const workercode = (self) => {
