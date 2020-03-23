@@ -2,9 +2,9 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import './index.scss'
 import IO from 'socket.io-client'
 import { socketEvents } from './component/socket-io'
-import { Toast, Button, InputItem } from 'antd-mobile'
+import { Toast, Button, InputItem,Icon } from 'antd-mobile'
 import globals from '../../config'
-import { getChartList } from '../../api/chart'
+import { getChartList, delMes } from '../../api/chart'
 import MyProgress from './component/process'
 import UploadFile from './component/upload'
 
@@ -17,6 +17,7 @@ function Chat(props) {
   const [nickName, setNickName] = useState() // 昵称
   const [onlineNum, setOnlineNum] = useState(1) // 在线人数
   const [percent,setPercent] = useState(0)
+  const [ifUploadShow,setIfUploadShow] = useState(false)
   const latestMesList = useRef(mesHistorys)
   // console.log('---------', mesHistorys)
   // let autoFocusInst
@@ -110,15 +111,27 @@ function Chat(props) {
         })
         addMes(Messages)
         // mesLists = Messages
+      }else{
+        return []
       }
     },
     [addMes]
   )
+  const switchUpload = useCallback(()=>{
+    setIfUploadShow(!ifUploadShow)
+  },[ifUploadShow])
 
   const inits = useCallback(() => {
     socketEvents(ioSocket, addMes)
     initHistoryList(20)
   }, [initHistoryList, addMes])
+  // 删除
+  const delMesFunc = useCallback(async ()=>{
+    await delMes(11)
+    let list = await initHistoryList(20)
+    console.log('list',list)
+    setMesHistorys(list)
+  },[initHistoryList])
   // hack for mesHistorys cannot read new value!
   useEffect(() => {
     latestMesList.current = mesHistorys
@@ -150,13 +163,16 @@ function Chat(props) {
   return (
     <div className='chats'>
       <MyProgress percent={percent} />
-      {onlineNum >= 1 && <div className='onlineNum'>在线人数：{onlineNum}</div>}
+      
+      {onlineNum >= 1 && <div className='onlineNum'>
+        <span className="delHistorys" onClick={delMesFunc}>清空历史--</span>
+        <span>在线人数：{onlineNum}</span>
+      </div>}
       <div id='chatRoom'>
         <div id='mesConts' dangerouslySetInnerHTML={{ __html: mesHistorys }}>
           {/* {mesHistory} */}
         </div>
       </div>
-      <UploadFile sendMes={sendMes} changeProcess={(val)=>setPercent(val)} />
       <div className='messText'>
         <InputItem
           clear
@@ -172,10 +188,11 @@ function Chat(props) {
             setMes(val)
           }}
           value={mes}></InputItem>
-        <Button type='ghost' inline onClick={sendMes}>
+        {mes ? <Button type='ghost' inline onClick={sendMes}>
           发送
-        </Button>
+        </Button>:<Icon className="more" type='ellipsis' onClick={switchUpload} />}
       </div>
+      {ifUploadShow && <UploadFile sendMes={sendMes} changeProcess={(val)=>setPercent(val)} />}
       <div className='changeName'>
         <InputItem
           clear

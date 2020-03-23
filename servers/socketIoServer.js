@@ -1,7 +1,9 @@
-var app = require('express')()
+var express = require('express')
+var app = express()
 var http = require('http').Server(app)
 var io = require('socket.io')(http)
 var fs = require('fs')
+var path = require('path')
 const msgDb = require('./src/models/talk')
 const file_routers = require('./src/routes/upload-2')
 
@@ -13,6 +15,8 @@ app.use('/', (req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE,OPTIONS');
   next()
 })
+// var url = path.resolve('./uploadFile/totalFile')
+app.use('/files', express.static('./uploadFile/totalFile'))
 app.use('/file/',file_routers)
 // 获取聊天列表接口
 app.get('/chat', function (req, res) {
@@ -24,6 +28,14 @@ app.get('/chat', function (req, res) {
     // console.log(data, 'data')
     res.send(data)
   }
+})
+// 清空数据库消息
+app.get('/delMes',function (req,res) {
+  let {num} = req.query
+  console.log(num)
+  msgDb.updateMessage({},{},()=>{
+    res.send('删除成功')
+  })
 })
 
 
@@ -78,6 +90,15 @@ io.on('connection', function (socket) {
   socket.on('sendImg', function (data) {
     data.nickName = socket.name
     socket.broadcast.emit('receiveImg', data, onlineCount)
+    const mesData = {
+      nickName:data.nickName,
+      says:data.img,
+      type: 'img'
+    }
+    // 图片入库，有问题？？
+    msgDb.save(mesData, (mes) => {
+      console.log(mes)
+    })
   })
 })
 function broadcast (msg, socket) {

@@ -84,5 +84,14 @@ module.exports = {
       }
       return callback(null,datas)
     })
+  },
+  updateMessage: function (conditions,newData,callback) {
+    Talk.deleteMany(conditions,newData,err=>{
+      if (err) {
+        return callback(err)
+      }else{
+        return callback(null)
+      }
+    })
   }
 }

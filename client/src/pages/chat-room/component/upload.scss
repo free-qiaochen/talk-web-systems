@@ -1,0 +1,30 @@
+.mesFiles{
+  position: relative;
+  #curImg{
+    position: absolute;
+    top:0;
+    left: 0;
+    opacity: 0;
+    width:260px;
+    height: 60px;
+    z-index: 11;
+  }
+  .fileArea{
+    position: absolute;
+    top:0;
+    left: 0;
+    display: inline-block;
+    width:260px;
+    height: 60px;
+    background:rgba(0,0,0,.2);
+    border-radius: 2px;
+    color: #999;
+    line-height: 56px;
+  }
+  .sendFile{
+    margin-left: 270px;
+  }
+  .uploadOption{
+    padding-top:15px;
+  }
+}

@@ -1,9 +1,10 @@
 // 文件上传，图片上传，切片，大文件，进度，优化速度
 
 import React, { useEffect, useState, useCallback } from 'react'
-import { Toast, Button } from 'antd-mobile'
+import { Toast, Button,ImagePicker } from 'antd-mobile'
 import global from '@/config'
 import { uploadFile, mergeFile, ifUpload } from '@/api/chart'
+import './upload.scss'
 // import { promises } from 'dns'
 import ClipboardJS from 'clipboard'
 // import worker_script from '/hash.js';
@@ -11,7 +12,7 @@ var myWorker = new Worker('/hash.js')
 
 function UploadFile (props) {
   const { sendMes, changeProcess } = props
-  const [fileDatas, setFileDatas] = useState()
+  const [fileDatas, setFileDatas] = useState([])
   const [chunkFileMes, setChunkFileMes] = useState({})
   const [uploading, setUploading] = useState(false)
   hackChangeProcess = changeProcess
@@ -22,19 +23,24 @@ function UploadFile (props) {
     e => {
       e.persist() // react hack
       const [file] = e.target.files
+      setFileDatas(file)
       if (!file) {
         return
       }
-      setFileDatas(file)
       changeProcess(0)
     },
     [changeProcess]
   )
+  const onChange = (files, type, index) => {
+    console.log(files, type, index);
+    setFileDatas(files)
+  }
   /**
    * 点击发送文件，分图片和其他文件
    *  */
   const sendFiles = useCallback(
     async type => {
+      // const fileDatas = fileDatas[0].file
       console.log(fileDatas)
       if (!fileDatas) {
         Toast.info('请先选择文件')
@@ -134,17 +140,22 @@ function UploadFile (props) {
     myWorker.postMessage('im from main')
   }, [])
   return (
-    <div className='mesImages'>
+    <div className='mesFiles'>
       <input
         type='file'
         id='curImg'
         accept='*.jpe?g,*.png'
         onChange={e => {
           getFile(e)
-        }}
-      />
-      <Button type='ghost' inline onClick={sendFiles}>
-        发送图片
+        }} />
+      <span className="fileArea">{(fileDatas && fileDatas.name)||'文件上传...'}</span>
+      {/* <ImagePicker files={fileDatas}
+          onChange={onChange}
+          onImageClick={(index, fs) => console.log(index, fs)}
+          selectable={fileDatas.length < 3}
+          accept="image/gif,image/jpeg,image/jpg,image/png,*" /> */}
+      <Button className="sendFile" type='ghost' inline onClick={sendFiles}>
+        发送
       </Button>
       {/* <Button onClick={testPercent}>测试percent</Button> */}
       {uploading && (
@@ -196,6 +207,7 @@ async function mergeFileFunc (fileName, chunkSize, oldName) {
   console.log('请求合并')
   let data = await mergeFile({ curFile: fileName, chunkSize, oldName })
   console.log(data && data.message)
+  data && Toast.info(data.message)
 }
 /**
  * 计算文件hash

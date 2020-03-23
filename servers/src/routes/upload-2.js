@@ -8,9 +8,9 @@ const multiparty = require("multiparty")
 
 // ----------------------
 // 文件片的存储目录
-const ChunkFileDir = path.resolve(__dirname, "../../../", "uploadFile/chunkFile");
+const ChunkFileDir = path.resolve(__dirname, "../../", "uploadFile/chunkFile");
 //合成的文件的存储目录
-const TotalFileDir = path.resolve(__dirname, "../../../", "uploadFile/totalFile");
+const TotalFileDir = path.resolve(__dirname, "../../", "uploadFile/totalFile");
 
 // 
 const resolvePost = req=>{
@@ -188,7 +188,8 @@ const mergeFileChunk = async (targetFile, fileName, size) => {
     console.log('存在chunkDir，')
   }
   fse.rmdirSync(chunkDir)
-  // fse.removeSync(chunkDir)
+  // copy文件到下载目录存储一份，文件名修改
+  
 }
 
 

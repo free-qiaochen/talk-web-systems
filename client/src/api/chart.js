@@ -9,6 +9,8 @@ export const uploadFile = (data,processfunc,upItem) => getData('/file/upload-fil
 export const mergeFile = (data) => getData('/file/merge',data)
 // 验证文件是否已发送
 export const ifUpload = (data) => getData('/file/verify',data)
+// 清空历史
+export const delMes = (data) => getData('/delMes',data)
 /* export const getChartList = () => {
   let xhr = new XMLHttpRequest()
   xhr.open('get', 'http://10.105.18.185:5005/chat', true)
