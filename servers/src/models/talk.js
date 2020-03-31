@@ -9,6 +9,7 @@ var schema = new mongoose.Schema({
   size: Number,
   says: String,
   times: Date,
+  type: String,
 });
 var Talk = mongoose.model('talking', schema);
 // 保存数据法一
@@ -73,12 +74,14 @@ module.exports = {
       // Talk.update({_id:id},data)
       Talk.create(data,err=>{
         if (err) return callback(err)
+        // console.log(Talk.find())
         return callback('save suceess！')
       })
     }
   },
   findMes: function (conditions,wantData,options,callback) {
     Talk.find(conditions,wantData,options,(err,datas)=>{
+      console.log(err,datas)
       if (err) {
         return callback(err)
       }

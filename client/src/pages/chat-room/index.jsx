@@ -2,13 +2,13 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import './index.scss'
 import IO from 'socket.io-client'
 import { socketEvents } from './component/socket-io'
-import { Toast, Button, InputItem,Icon } from 'antd-mobile'
+import { Toast, Button, InputItem, Icon } from 'antd-mobile'
 import globals from '../../config'
 import { getChartList, delMes } from '../../api/chart'
 import MyProgress from './component/process'
 import UploadFile from './component/upload'
 
-// let mesLists 
+// let mesLists
 let ioSocket
 
 function Chat(props) {
@@ -16,8 +16,8 @@ function Chat(props) {
   const [mes, setMes] = useState() // 当前输入的消息
   const [nickName, setNickName] = useState() // 昵称
   const [onlineNum, setOnlineNum] = useState(1) // 在线人数
-  const [percent,setPercent] = useState(0)
-  const [ifUploadShow,setIfUploadShow] = useState(false)
+  const [percent, setPercent] = useState(0)
+  const [ifUploadShow, setIfUploadShow] = useState(false)
   const latestMesList = useRef(mesHistorys)
   // console.log('---------', mesHistorys)
   // let autoFocusInst
@@ -100,38 +100,40 @@ function Chat(props) {
         let targets = data.reverse()
         targets.forEach(item => {
           let className = item.nickName === nickName ? 'mesRight' : 'mes'
-          // let message = className === 'mesRight' ? msg.replace(nickName + '：', '') : msg
-          if (className === 'mesRight') {
-            Messages += `<p class="${className}">${item.says}</p>`
+          let pre = className === 'mesRight' ? '' : item.nickName+':'
+          if (item.type === 'href') {
+            Messages += `<p class="${className}"><a href="${item.says}" target="_blank">${pre+item.says}</a></p>`
           } else {
-            Messages += `<p class="${className}">${item.nickName +
-              ':' +
-              item.says}</p>`
+            if (className === 'mesRight') {
+              Messages += `<p class="${className}">${pre+item.says}</p>`
+            } else {
+              Messages += `<p class="${className}">${pre+item.says}</p>`
+            }
           }
         })
         addMes(Messages)
         // mesLists = Messages
-      }else{
+      } else {
         return []
       }
     },
     [addMes]
   )
-  const switchUpload = useCallback(()=>{
+  const switchUpload = useCallback(() => {
     setIfUploadShow(!ifUploadShow)
-  },[ifUploadShow])
+  }, [ifUploadShow])
 
   const inits = useCallback(() => {
     socketEvents(ioSocket, addMes)
     initHistoryList(20)
   }, [initHistoryList, addMes])
   // 删除
-  const delMesFunc = useCallback(async ()=>{
+  const delMesFunc = useCallback(async () => {
     await delMes(11)
     let list = await initHistoryList(20)
-    console.log('list',list)
+    console.log('list', list)
     setMesHistorys(list)
-  },[initHistoryList])
+  }, [initHistoryList])
   // hack for mesHistorys cannot read new value!
   useEffect(() => {
     latestMesList.current = mesHistorys
@@ -163,11 +165,15 @@ function Chat(props) {
   return (
     <div className='chats'>
       <MyProgress percent={percent} />
-      
-      {onlineNum >= 1 && <div className='onlineNum'>
-        <span className="delHistorys" onClick={delMesFunc}>清空历史--</span>
-        <span>在线人数：{onlineNum}</span>
-      </div>}
+
+      {onlineNum >= 1 && (
+        <div className='onlineNum'>
+          <span className='delHistorys' onClick={delMesFunc}>
+            清空历史--
+          </span>
+          <span>在线人数：{onlineNum}</span>
+        </div>
+      )}
       <div id='chatRoom'>
         <div id='mesConts' dangerouslySetInnerHTML={{ __html: mesHistorys }}>
           {/* {mesHistory} */}
@@ -188,11 +194,17 @@ function Chat(props) {
             setMes(val)
           }}
           value={mes}></InputItem>
-        {mes ? <Button type='ghost' inline onClick={sendMes}>
-          发送
-        </Button>:<Icon className="more" type='ellipsis' onClick={switchUpload} />}
+        {mes ? (
+          <Button type='ghost' inline onClick={sendMes}>
+            发送
+          </Button>
+        ) : (
+          <Icon className='more' type='ellipsis' onClick={switchUpload} />
+        )}
       </div>
-      {ifUploadShow && <UploadFile sendMes={sendMes} changeProcess={(val)=>setPercent(val)} />}
+      {ifUploadShow && (
+        <UploadFile sendMes={sendMes} changeProcess={val => setPercent(val)} />
+      )}
       <div className='changeName'>
         <InputItem
           clear
@@ -258,7 +270,7 @@ function sendImg(ioSocket, imgsId, addMes, onlineNum) {
   reader.readAsDataURL(file)
   Toast.loading('发送中', 0)
   reader.onload = function() {
-    let imgs = { img: this.result, nickName: '' }
+    let imgs = { img: this.result, nickName: '', name: file.name }
     ioSocket.emit('sendImg', imgs)
     // console.log(imgs)
     imgInput.value = ''

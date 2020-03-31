@@ -3,6 +3,7 @@ var app = express()
 var http = require('http').Server(app)
 var io = require('socket.io')(http)
 var fs = require('fs')
+const fse = require("fs-extra")
 var path = require('path')
 const msgDb = require('./src/models/talk')
 const file_routers = require('./src/routes/upload-2')
@@ -15,27 +16,27 @@ app.use('/', (req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE,OPTIONS');
   next()
 })
-// var url = path.resolve('./uploadFile/totalFile')
-app.use('/files', express.static('./uploadFile/totalFile'))
-app.use('/file/',file_routers)
+// 静态文件托管，可以让前端通过服务器绝对地址访问到文件(http://10.105.18.185:5005/files/1.zip)
+app.use('/files', express.static('../uploadFile/totalFile'))
+app.use('/file/', file_routers)
 // 获取聊天列表接口
 app.get('/chat', function (req, res) {
   let { num } = req.query
   // console.log(req.query)
   const findOption = {}
-  msgDb.findMes(findOption, { nickName: 1, says: 1, _id: 0 }, { limit: Number(num), sort: { _id: -1 } }, callback)
+  msgDb.findMes(findOption, { nickName: 1, says: 1,type:1, _id: 0 }, { limit: Number(num), sort: { _id: -1 } }, callback)
   function callback (err, data) {
-    // console.log(data, 'data')
+    console.log(err,data, 'data')
     res.send(data)
   }
 })
 // 清空数据库消息
-app.get('/delMes',function (req,res) {
-  let {num} = req.query
+app.get('/delMes', function (req, res) {
+  let { num } = req.query
   console.log(num)
-  msgDb.updateMessage({},{},()=>{
-    res.send('删除成功')
-  })
+  // msgDb.updateMessage({}, {}, () => {
+  //   res.send('删除成功')
+  // })
 })
 
 
@@ -90,10 +91,30 @@ io.on('connection', function (socket) {
   socket.on('sendImg', function (data) {
     data.nickName = socket.name
     socket.broadcast.emit('receiveImg', data, onlineCount)
+    //图片文件的存储目录
+    const TotalFileDir = path.resolve(__dirname, "../", "uploadFile/totalFile");
+    const totalPaths = TotalFileDir + `/${data.name}`
+    // 目录，文件不存在就创建
+    fse.ensureDirSync(TotalFileDir)
+    fse.ensureFileSync(totalPaths, '')
+    //过滤data:URL
+    var base64Data = data.img.replace(/^data:image\/\w+;base64,/, "");
+    var dataBuffer = Buffer.from(base64Data, 'base64');
+    fse.writeFile(totalPaths, dataBuffer, function (err) {
+      if (err) {
+        console.error(err)
+        // res.send(err);
+      }else{
+        console.log('图片写入成功！')
+      }
+    });
+    // console.log(socket.handshake.headers)
+    const filePath = `http://${socket.handshake.headers.host}/files/${data.name}`
+    console.log(filePath)
     const mesData = {
-      nickName:data.nickName,
-      says:data.img,
-      type: 'img'
+      nickName: data.nickName,
+      says: filePath,
+      type: 'href'
     }
     // 图片入库，有问题？？
     msgDb.save(mesData, (mes) => {
