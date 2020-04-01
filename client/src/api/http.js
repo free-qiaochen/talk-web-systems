@@ -27,6 +27,7 @@ const cancelToken = () => {
   return new axios.CancelToken(cancel => {
     // cancel 就是取消请求的方法
     global.requestList.push({ cancel })
+    // global.requestList  待清除，在所有请求的loading结束后
   })
 }
 /**

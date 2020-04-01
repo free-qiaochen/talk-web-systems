@@ -46,6 +46,7 @@ function UploadFile(props) {
     async type => {
       // const fileDatas = fileDatas[0].file
       console.log(fileDatas)
+      console.log('global:',global.requestList)
       if (!fileDatas) {
         Toast.info('请先选择文件')
         return
