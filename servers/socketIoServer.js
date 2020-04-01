@@ -76,6 +76,8 @@ io.on('connection', function (socket) {
       socket.name = msg
       onlineUsers[msg] = socket
       broadcast(`修改昵称为：${msg}`, socket)
+    }else if (type==='file') {
+      broadcast(msg, socket)
     } else {
       broadcast(msg, socket)
       // 聊天数据入库

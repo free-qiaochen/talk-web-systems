@@ -7,7 +7,7 @@ import { Toast, Button, InputItem, Icon } from 'antd-mobile'
 import MyProgress from './component/process'
 import UploadFile from './component/upload'
 import { getChartList, delMes } from '../../api/chart'
-import { formatFileName } from "@utils/common";
+import { formatFileName } from '@utils/common'
 
 // let mesLists
 let ioSocket
@@ -63,7 +63,7 @@ function Chat(props) {
    * @params type--消息类型
    *  */
   const sendMes = useCallback(
-    type => {
+    (type, fileName) => {
       // console.log('---:',nickName, mes,mesHistorys)
       if (!nickName || nickName === 'null') {
         // alert('请先输入昵称，再进入房间')
@@ -72,6 +72,12 @@ function Chat(props) {
       }
       if (type === 'img') {
         sendImg(ioSocket, 'curImg', addMes, onlineNum)
+        setMes('')
+        return
+      }
+      if (type === 'file') {
+        sendText(ioSocket, fileName, type)
+        setMes('')
         return
       }
       sendText(ioSocket, mes)
@@ -101,14 +107,16 @@ function Chat(props) {
         let targets = data.reverse()
         targets.forEach(item => {
           let className = item.nickName === nickName ? 'mesRight' : 'mes'
-          let pre = className === 'mesRight' ? '' : item.nickName+':'
+          let pre = className === 'mesRight' ? '' : item.nickName + ':'
           if (item.type === 'href') {
-            Messages += `<p class="${className}"><a href="${item.says}" target="_blank">${pre+formatFileName(item.says)}</a></p>`
+            Messages += `<p class="${className}"><a href="${
+              item.says
+            }" target="_blank">${pre + formatFileName(item.says)}</a></p>`
           } else {
             if (className === 'mesRight') {
-              Messages += `<p class="${className}">${pre+item.says}</p>`
+              Messages += `<p class="${className}">${pre + item.says}</p>`
             } else {
-              Messages += `<p class="${className}">${pre+item.says}</p>`
+              Messages += `<p class="${className}">${pre + item.says}</p>`
             }
           }
         })
@@ -204,7 +212,11 @@ function Chat(props) {
         )}
       </div>
       {ifUploadShow && (
-        <UploadFile sendMes={sendMes} nickName={nickName} changeProcess={val => setPercent(val)} />
+        <UploadFile
+          sendMes={sendMes}
+          nickName={nickName}
+          changeProcess={val => setPercent(val)}
+        />
       )}
       <div className='changeName'>
         <InputItem
@@ -242,12 +254,18 @@ function scrollToBottom() {
     chatRoom.scrollTop = chatRoom.scrollHeight - chatRoom.clientHeight
   }
 }
-// 发送文本消息
-function sendText(ioSocket, mesVal) {
+/**
+ *
+ * @param {*} ioSocket
+ * @param {*} mesVal
+ * @param {*} type
+ */
+function sendText(ioSocket, mesVal, type) {
   if (!!mesVal) {
     // 添加防护措施(防止输入端植入代码)
     let safeMes = mesVal.replace(/<[^<>]+>/g, '')
-    ioSocket.send(safeMes)
+    // 发送文件名字不再入库，因为在api中已入库
+    type === 'file' ? ioSocket.send(safeMes, 'file') : ioSocket.send(safeMes)
   } else {
     // alert('请输入消息')
     Toast.info('请输入消息 !!!', 1)

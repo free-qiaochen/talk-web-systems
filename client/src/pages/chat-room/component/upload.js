@@ -52,10 +52,10 @@ function UploadFile(props) {
       }
       changeProcess(0)
       if (fileDatas && fileDatas.type.includes('image')) {
-        sendMes('img')
+        sendMes('img')  //socket发送图片
       } else {
         if (type === 'continue') {
-          continueUpload(chunkFileMes, fileDatas.name, nickName)
+          continueUpload(chunkFileMes, fileDatas.name, nickName,sendMes)
           return
         }
         console.log('文件切片')
@@ -108,7 +108,7 @@ function UploadFile(props) {
         console.log('chunkFileMes:', chunkFileMes, latestChunkFileMes)
         changeProcess(0) // 进度重置
         // 切片上传功能函数
-        uploadFunc(uploadedList, latestChunkFileMes, fileName, nickName)
+        uploadFunc(uploadedList, latestChunkFileMes, fileName, nickName,sendMes)
       }
     },
     [sendMes, fileDatas, chunkFileMes, changeProcess, nickName]
@@ -209,7 +209,7 @@ function createFileChunk(files, chunkSize = 1000 * 1024) {
  * @param {*} fileName
  * @param {*} chunkSize
  */
-async function mergeFileFunc(fileName, chunkSize, oldName, nickName) {
+async function mergeFileFunc(fileName, chunkSize, oldName, nickName,sendMes) {
   console.log('请求合并')
   let data = await mergeFile({
     curFile: fileName,
@@ -217,8 +217,12 @@ async function mergeFileFunc(fileName, chunkSize, oldName, nickName) {
     oldName,
     nickName
   })
-  console.log(data && data.message)
-  data && Toast.info(data.message)
+  if (data && data.code === 0) {
+    console.log(data && data.message)
+    data && Toast.info(data.message)
+    sendMes('file',oldName) // 触发socket发送文件名（文件上传完毕后）
+  }
+  Toast.info(data.message)
 }
 /**
  * 计算文件hash
@@ -249,7 +253,7 @@ function calculateHash(fileChunkList, changeProcess, setUploading) {
  * @param {*} fileHash 文件hash（spark-md5）
  * @param {*} chunkSize 切片大小
  */
-async function uploadFunc(uploadedList = [], chunkFileMes, fileName, nickName) {
+async function uploadFunc(uploadedList = [], chunkFileMes, fileName, nickName,sendMes) {
   const { splitFileList, chunkNumber, fileHash, chunkSize } = chunkFileMes
   // 遍历切片集合，
   const Lists =
@@ -282,7 +286,7 @@ async function uploadFunc(uploadedList = [], chunkFileMes, fileName, nickName) {
   console.log('上传成功,开始合并')
   // fileName 改为 fileHash
   const fileType = fileName.slice(fileName.lastIndexOf('.'), fileName.length)
-  await mergeFileFunc(fileHash + fileType, chunkSize, fileName, nickName)
+  await mergeFileFunc(fileHash + fileType, chunkSize, fileName, nickName,sendMes)
 }
 var hackCurChunkList = []
 var hackChangeProcess
@@ -319,7 +323,7 @@ function pauseUpload(params) {
   global.requestList = []
 }
 // 恢复上传??????合并到发送按钮上，否则是拆分上传方法
-async function continueUpload(chunkFileMes, fileName, nickName) {
+async function continueUpload(chunkFileMes, fileName, nickName,sendMes) {
   // const { splitFileList, chunkNumber, fileHash, chunkSize } = chunkFileMes
   const { fileHash } = chunkFileMes
   const { uploadedList, shouldUpload } = await verifyUpload(fileName, fileHash)
@@ -327,6 +331,6 @@ async function continueUpload(chunkFileMes, fileName, nickName) {
     Toast.info('文件秒传成功，文件已存在了！')
     return
   }
-  await uploadFunc(uploadedList, chunkFileMes, fileName, nickName)
+  await uploadFunc(uploadedList, chunkFileMes, fileName, nickName,sendMes)
   return uploadedList
 }
