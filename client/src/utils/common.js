@@ -88,3 +88,12 @@ export function setUUID () {
   }
   window.localStorage.setItem('uuid', uuid())
 }
+/**
+ * 
+ * @param {String} fileUrl 文件路径（http://10.105.18.185:5005/files/old-file/每日健康数据_2020-03-01 (3).xlsx）
+ */
+export function formatFileName(fileUrl) {
+  const lastIndex = fileUrl.lastIndexOf('/')
+  const fileName = fileUrl.substr(lastIndex+1)
+  return fileName
+}

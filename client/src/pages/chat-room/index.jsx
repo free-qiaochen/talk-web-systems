@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import './index.scss'
 import IO from 'socket.io-client'
+import './index.scss'
+import globals from '../../config'
 import { socketEvents } from './component/socket-io'
 import { Toast, Button, InputItem, Icon } from 'antd-mobile'
-import globals from '../../config'
-import { getChartList, delMes } from '../../api/chart'
 import MyProgress from './component/process'
 import UploadFile from './component/upload'
+import { getChartList, delMes } from '../../api/chart'
+import { formatFileName } from "@utils/common";
 
 // let mesLists
 let ioSocket
@@ -102,7 +103,7 @@ function Chat(props) {
           let className = item.nickName === nickName ? 'mesRight' : 'mes'
           let pre = className === 'mesRight' ? '' : item.nickName+':'
           if (item.type === 'href') {
-            Messages += `<p class="${className}"><a href="${item.says}" target="_blank">${pre+item.says}</a></p>`
+            Messages += `<p class="${className}"><a href="${item.says}" target="_blank">${pre+formatFileName(item.says)}</a></p>`
           } else {
             if (className === 'mesRight') {
               Messages += `<p class="${className}">${pre+item.says}</p>`
@@ -203,7 +204,7 @@ function Chat(props) {
         )}
       </div>
       {ifUploadShow && (
-        <UploadFile sendMes={sendMes} changeProcess={val => setPercent(val)} />
+        <UploadFile sendMes={sendMes} nickName={nickName} changeProcess={val => setPercent(val)} />
       )}
       <div className='changeName'>
         <InputItem

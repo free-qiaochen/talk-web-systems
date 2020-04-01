@@ -26,7 +26,8 @@ app.get('/chat', function (req, res) {
   const findOption = {}
   msgDb.findMes(findOption, { nickName: 1, says: 1,type:1, _id: 0 }, { limit: Number(num), sort: { _id: -1 } }, callback)
   function callback (err, data) {
-    console.log(err,data, 'data')
+    console.log(err)
+    // console.log(err,data, 'data')
     res.send(data)
   }
 })

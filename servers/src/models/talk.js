@@ -81,7 +81,7 @@ module.exports = {
   },
   findMes: function (conditions,wantData,options,callback) {
     Talk.find(conditions,wantData,options,(err,datas)=>{
-      console.log(err,datas)
+      console.log(err)
       if (err) {
         return callback(err)
       }

@@ -5,21 +5,23 @@ const routers = express.Router()
 const path = require("path")
 const fse = require("fs-extra")
 const multiparty = require("multiparty")
+const msgDb = require('../models/talk')
 
 // ----------------------
 // 文件片的存储目录
-const ChunkFileDir = path.resolve(__dirname, "../../", "uploadFile/chunkFile");
+const ChunkFileDir = path.resolve(__dirname, "../../../", "uploadFile/chunkFile");
 //合成的文件的存储目录
-const TotalFileDir = path.resolve(__dirname, "../../", "uploadFile/totalFile");
-
+const TotalFileDir = path.resolve(__dirname, "../../../", "uploadFile/totalFile");
+// 服务端基础路径
+let serverUrl = ''
 // 
-const resolvePost = req=>{
-  new Promise(resolve=>{
+const resolvePost = req => {
+  new Promise(resolve => {
     let chunk = ''
-    req.on('data',data=>{
-      chunk+=data
+    req.on('data', data => {
+      chunk += data
     })
-    req.on('end',()=>{
+    req.on('end', () => {
       resolve(JSON.parse(chunk))
     })
   })
@@ -34,8 +36,8 @@ routers.post('/upload-file', function (req, res) {
       if (err) {
         return;
       }
-      console.log('fields:',fields)
-      console.log('files:',files)
+      console.log('fields:', fields)
+      // console.log('files:',files)
       //chunk:{
       // path:存储临时文件的路径,
       // size:临时文件的大小,
@@ -86,15 +88,16 @@ routers.post('/upload-file', function (req, res) {
 })
 //合并文件
 routers.get('/merge', async (req, res) => {
-  console.log(req.query)
-  const { curFile, chunkSize,oldName } = req.query
-  console.log(curFile, chunkSize,oldName)
+  serverUrl = req.headers.host
+  // console.log(req)
+  const { curFile, chunkSize, oldName,nickName } = req.query
+  console.log(curFile, chunkSize, oldName,nickName)
   // oldName 待用！！！！！！
   // 合并文件路径
   const filePath = path.resolve(TotalFileDir, `${curFile}`)
   try {
-    // filePath合并文件路径，curFile 当前文件名，chunkSize--切片大小
-    await mergeFileChunk(filePath, curFile, chunkSize)
+    // filePath合并文件路径，curFile 当前文件名，chunkSize--切片大小,oldName原有名字
+    await mergeFileChunk(filePath, curFile, chunkSize, oldName,nickName)
     // res.status(200).json("合并文件成功!");
     // res.send('合并文件成功!')
     res.end(
@@ -106,32 +109,32 @@ routers.get('/merge', async (req, res) => {
   }
 });
 // 提取文件后缀名
-const extractExt = fileName=>{
-  return fileName.slice(fileName.lastIndexOf('.'),fileName.length)
+const extractExt = fileName => {
+  return fileName.slice(fileName.lastIndexOf('.'), fileName.length)
 }
 // 返回已经上传切片名字的列表
-const createUploadedList = async fileHash=>{
+const createUploadedList = async fileHash => {
   // 当前文件的切片目录
-  const curChunkfileDir = path.resolve(ChunkFileDir,fileHash)
-  return fse.existsSync(curChunkfileDir) ? await fse.readdir(curChunkfileDir):[]
+  const curChunkfileDir = path.resolve(ChunkFileDir, fileHash)
+  return fse.existsSync(curChunkfileDir) ? await fse.readdir(curChunkfileDir) : []
 }
 /**
  * 验证文件上传情况，[已上传,未上传(部分上传)]
  * @param {*} fileName 
  * @param {*} fileHash 
  */
-routers.get('/verify',async(req,res)=>{
-  const {fileName,fileHash} = req.query
+routers.get('/verify', async (req, res) => {
+  const { fileName, fileHash } = req.query
   const ext = extractExt(fileName)
-  const filePath = path.resolve(TotalFileDir,`${fileHash}${ext}`)
-  console.log('确认文件存在：',filePath)
+  const filePath = path.resolve(TotalFileDir, `${fileHash}${ext}`)
+  console.log('确认文件存在：', filePath)
   let txt
   if (fse.existsSync(filePath)) {
-    txt = JSON.stringify({shouldUpload:false})
-  }else{
+    txt = JSON.stringify({ shouldUpload: false })
+  } else {
     txt = JSON.stringify({
-      shouldUpload:true,
-      uploadedList:await createUploadedList(fileHash)
+      shouldUpload: true,
+      uploadedList: await createUploadedList(fileHash)
     })
   }
   res.end(txt)
@@ -142,11 +145,11 @@ routers.get('/verify',async(req,res)=>{
  * @param {*} path 
  * @param {*} writeStream 
  */
-const pipeStream = (path,writeStream)=>{
-  return new Promise(resolve=>{
+const pipeStream = (path, writeStream) => {
+  return new Promise(resolve => {
     // 
     const readStream = fse.createReadStream(path);
-    readStream.on('end',()=>{
+    readStream.on('end', () => {
       fse.unlinkSync(path)  // 读取结束后删除切片
       console.log('读取结束后delete切片')
       resolve()
@@ -156,13 +159,13 @@ const pipeStream = (path,writeStream)=>{
   })
 }
 // 合并切片
-const mergeFileChunk = async (targetFile, fileName, size) => {
-  console.log('---:',targetFile, fileName, size)
+const mergeFileChunk = async (targetFile, fileName, size, oldName,nickName) => {
+  console.log('---:', targetFile, fileName, size)
   // 处理切片的存储目录，hash名字，确保去除后缀
   const hashName = fileName.includes('.') ? fileName.split('.')[0] : fileName
   // 切片文件目录,返回绝对路径
   const chunkDir = path.resolve(ChunkFileDir, hashName)
-  console.log('读取到切片缓存的目录：',chunkDir)
+  console.log('读取到切片缓存的目录：', chunkDir)
   // 读取切片文件目录，返回切片文件集合
   const chunkPaths = await fse.readdir(chunkDir)
   // 根据切片下标进行排序，防止顺序错乱,???
@@ -170,28 +173,51 @@ const mergeFileChunk = async (targetFile, fileName, size) => {
   // 文件不存在就创建
   fse.ensureFileSync(targetFile, '')
   // 遍历切片进行合并
-  const mergeing = chunkPaths.map(async(chunkPath,index)=>{
-    const chunkFilePath = path.resolve(chunkDir,chunkPath)
+  const mergeing = chunkPaths.map(async (chunkPath, index) => {
+    const chunkFilePath = path.resolve(chunkDir, chunkPath)
     // 并发合并,提高速度
-    const chunkFileStream = fse.createWriteStream(targetFile,{
-      start:index*size,
-      end:(index+1)*size
+    const chunkFileStream = fse.createWriteStream(targetFile, {
+      start: index * size,
+      end: (index + 1) * size
     })
-    const done = await pipeStream(chunkFilePath,chunkFileStream)
+    const done = await pipeStream(chunkFilePath, chunkFileStream)
     return done
   })
   // console.log('merge status:',mergeing)
   await Promise.all(mergeing)
   // 合并后删除切片的目录
-  console.log('delete:',chunkDir)
+  console.log('delete:', chunkDir)
   if (fse.existsSync(chunkDir)) {
     console.log('存在chunkDir，')
   }
   fse.rmdirSync(chunkDir)
-  // copy文件到下载目录存储一份，文件名修改
-  
+  // copy文件到下载目录存储一份，文件名修改为原名
+  fse.ensureDirSync(`${TotalFileDir}/old-file`)
+  let copyFile = `${TotalFileDir}/old-file/${oldName}`
+  fse.copyFile(targetFile, copyFile, function (err) {
+    if (err) console.log('copy something wrong was happened')
+    else console.log('copy file succeed');
+  })
+  saveDatas(oldName,nickName)
 }
-
+/**
+ * // 文件服务器路径入库存储
+ * @param {*} fileName 上传的文件原名
+ * @param {*} nickName 用户昵称
+ */
+function saveDatas (fileName,nickName='xxx') {
+  const filePath = `http://${serverUrl}/files/old-file/${fileName}`
+  console.log(filePath)
+  const mesData = {
+    nickName: nickName,
+    says: filePath,
+    type: 'href'
+  }
+  // 文件入库，有问题
+  msgDb.save(mesData, (mes) => {
+    console.log(mes)
+  })
+}
 
 // -----------
 
