@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import IO from 'socket.io-client'
 import { Toast, Button, InputItem, Icon } from 'antd-mobile'
-import ImgConversion from "image-conversion";
+import * as imageConversion from 'image-conversion'
 import './index.scss'
 import globals from '../../config'
 import { socketEvents } from './component/socket-io'
@@ -316,7 +316,8 @@ async function sendImg(ioSocket, imgsId, addMes, onlineNum) {
 // 图片压缩(转换)
 async function imgConversion(imgFile) {
   try {
-    const res = await ImgConversion.compressAccurately(imgFile, 1000)
+    const res = await imageConversion.compressAccurately(imgFile, 200)
+    // console.log(res)
     return res
   } catch (error) {
     console.error(error)
