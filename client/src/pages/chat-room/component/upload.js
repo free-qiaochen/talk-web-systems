@@ -47,13 +47,16 @@ function UploadFile(props) {
       // const fileDatas = fileDatas[0].file
       console.log(fileDatas)
       console.log('global:', global.requestList)
-      if (!fileDatas || !fileDatas.type) {
+      if (!fileDatas || !fileDatas.size) {
         Toast.info('请先选择文件')
         return
       }
       changeProcess(0)
       if (fileDatas && fileDatas.type.includes('image')) {
         sendMes('img') //socket发送图片
+        setTimeout(() => {
+          setFileDatas(null)  //清空输入框显示的名字
+        }, 2000);
       } else {
         if (type === 'continue') {
           continueUpload(chunkFileMes, fileDatas.name, nickName, sendMes)
@@ -109,13 +112,14 @@ function UploadFile(props) {
         console.log('chunkFileMes:', chunkFileMes, latestChunkFileMes)
         changeProcess(0) // 进度重置
         // 切片上传功能函数
-        uploadFunc(
+        await uploadFunc(
           uploadedList,
           latestChunkFileMes,
           fileName,
           nickName,
           sendMes
         )
+        setFileDatas(null)
       }
     },
     [sendMes, fileDatas, chunkFileMes, changeProcess, nickName]
@@ -306,6 +310,7 @@ async function uploadFunc(
     nickName,
     sendMes
   )
+  return true
 }
 var hackCurChunkList = []
 var hackChangeProcess

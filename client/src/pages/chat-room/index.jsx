@@ -32,7 +32,7 @@ function Chat(props) {
    *  */
   const addMes = useCallback(
     (val, onlineNums, leaveObj) => {
-      console.log(mesHistorys, val, onlineNums)
+      // console.log(mesHistorys, val, onlineNums)
       if (onlineNums >= 1) setOnlineNum(Number(onlineNums))
       if (leaveObj && leaveObj.type === 'leave') {
         Toast.info(`${leaveObj.name}：离开了！`)
@@ -41,17 +41,17 @@ function Chat(props) {
         Toast.info(`欢迎新朋友,请自定义个人昵称!`)
         return
       }
-      console.log(
-        '这里取值mesHistorys有问题，mesHistorys:',
-        mesHistorys,
-        latestMesList.current
-      )
+      // console.log(
+      //   '这里取值mesHistorys有问题，mesHistorys:',
+      //   mesHistorys,
+      //   latestMesList.current
+      // )
       // mesLists = mesLists ? mesLists + val : val
       // 有了hack处理后，可以不再组件外声明变量存储，可间接使用到最新state数据
       const mesLists = latestMesList.current ? latestMesList.current + val : val
       // console.log('设置之前：', mesLists)
       setMesHistorys(mesLists)
-      console.log('后：', mesHistorys)
+      // console.log('后：', mesHistorys)
       scrollToBottom()
       if (leaveObj && leaveObj.type === 'img') {
         setTimeout(() => {
@@ -102,7 +102,7 @@ function Chat(props) {
       // api获取数据
       // console.log('获取数据----------api')
       let data = await getChartList({ num })
-      console.log('init api data--', data)
+      // console.log('init api data--', data)
       if (data && data.length > 0) {
         const nickName = sessionStorage.getItem('nickName') || null
         let Messages
