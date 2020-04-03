@@ -36,4 +36,3 @@ server {
 centos安装了locate可以查看文件路径 locate filename
 
 
-
