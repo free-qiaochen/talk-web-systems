@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import IO from 'socket.io-client'
+import { Toast, Button, InputItem, Icon } from 'antd-mobile'
+import ImgConversion from "image-conversion";
 import './index.scss'
 import globals from '../../config'
 import { socketEvents } from './component/socket-io'
-import { Toast, Button, InputItem, Icon } from 'antd-mobile'
-import MyProgress from './component/process'
+import MyProgress from '../../components/process/process'
 import UploadFile from './component/upload'
 import { getChartList, delMes } from '../../api/chart'
 import { formatFileName } from '@utils/common'
@@ -19,6 +20,7 @@ function Chat(props) {
   const [onlineNum, setOnlineNum] = useState(1) // 在线人数
   const [percent, setPercent] = useState(0)
   const [ifUploadShow, setIfUploadShow] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const latestMesList = useRef(mesHistorys)
   // console.log('---------', mesHistorys)
   // let autoFocusInst
@@ -143,6 +145,15 @@ function Chat(props) {
     console.log('list', list)
     setMesHistorys(list)
   }, [initHistoryList])
+  // 进度变化
+  const changeProcess = useCallback((val, type) => {
+    console.log('----type:',type)
+    if (!(type === 'upload')) {
+      setPercent(val)
+    }else{
+      setUploadProgress(val)
+    }
+  }, [])
   // hack for mesHistorys cannot read new value!
   useEffect(() => {
     latestMesList.current = mesHistorys
@@ -173,7 +184,7 @@ function Chat(props) {
   }, [])
   return (
     <div className='chats'>
-      <MyProgress percent={percent} />
+      <MyProgress percent={percent} process={uploadProgress} />
 
       {onlineNum >= 1 && (
         <div className='onlineNum'>
@@ -215,7 +226,7 @@ function Chat(props) {
         <UploadFile
           sendMes={sendMes}
           nickName={nickName}
-          changeProcess={val => setPercent(val)}
+          changeProcess={changeProcess}
         />
       )}
       <div className='changeName'>
@@ -278,15 +289,16 @@ function sendText(ioSocket, mesVal, type) {
   // }, 0);
 }
 // 发送图片
-function sendImg(ioSocket, imgsId, addMes, onlineNum) {
+async function sendImg(ioSocket, imgsId, addMes, onlineNum) {
   const imgInput = document.getElementById(imgsId)
   if (!imgInput.value) {
     Toast.info('请先选择图片 !!!', 1)
     return
   }
   let file = imgInput.files[0]
+  let miniFile = await imgConversion(file)
   let reader = new FileReader()
-  reader.readAsDataURL(file)
+  reader.readAsDataURL(miniFile)
   Toast.loading('发送中', 0)
   reader.onload = function() {
     let imgs = { img: this.result, nickName: '', name: file.name }
@@ -299,6 +311,16 @@ function sendImg(ioSocket, imgsId, addMes, onlineNum) {
       <img src="${imgs.img}"/>
     </div>`
     addMes(imgHtml, onlineNum, { type: 'img' })
+  }
+}
+// 图片压缩(转换)
+async function imgConversion(imgFile) {
+  try {
+    const res = await ImgConversion.compressAccurately(imgFile, 1000)
+    return res
+  } catch (error) {
+    console.error(error)
+    return(error)
   }
 }
 
