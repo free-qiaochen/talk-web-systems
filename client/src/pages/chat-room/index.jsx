@@ -147,7 +147,7 @@ function Chat(props) {
   }, [initHistoryList])
   // 进度变化
   const changeProcess = useCallback((val, type) => {
-    console.log('----type:',type)
+    console.log('----processType:',type)
     if (!(type === 'upload')) {
       setPercent(val)
     }else{

@@ -27,6 +27,7 @@ function UploadFile(props) {
     e => {
       e.persist() // react hack
       const [file] = e.target.files
+      console.log('select file:' ,e.target.files[0],'--',file.name,'--',file.size,'--',file.type)
       setFileDatas(file)
       if (!file) {
         return
@@ -46,7 +47,7 @@ function UploadFile(props) {
     async type => {
       // const fileDatas = fileDatas[0].file
       console.log(fileDatas)
-      console.log('global:', global.requestList)
+      // console.log('global:', global.requestList)
       if (!fileDatas || !fileDatas.size) {
         Toast.info('请先选择文件')
         return
@@ -55,8 +56,8 @@ function UploadFile(props) {
       if (fileDatas && fileDatas.type.includes('image')) {
         sendMes('img') //socket发送图片
         setTimeout(() => {
-          setFileDatas(null)  //清空输入框显示的名字
-        }, 2000);
+          setFileDatas(null) //清空输入框显示的名字
+        }, 2000)
       } else {
         if (type === 'continue') {
           continueUpload(chunkFileMes, fileDatas.name, nickName, sendMes)
@@ -155,9 +156,8 @@ function UploadFile(props) {
   return (
     <div className='mesFiles'>
       <input
-        type='file'
+        type='file' name="file"
         id='curImg'
-        accept='*.jpe?g,*.png'
         onChange={e => {
           getFile(e)
         }}
@@ -203,6 +203,7 @@ export default UploadFile
  * @params files--目标文件，chunkSize--切片大小
  *  */
 function createFileChunk(files, chunkSize = 1000 * 1024) {
+  console.log('开始切片--')
   const fileChunkList = []
   // 向上取整
   const length = Math.ceil(files.size / chunkSize)
@@ -220,10 +221,10 @@ function createFileChunk(files, chunkSize = 1000 * 1024) {
  * @param {*} fileName
  * @param {*} chunkSize
  */
-async function mergeFileFunc(fileName, chunkSize, oldName, nickName, sendMes) {
+async function mergeFileFunc(fileHash, chunkSize, oldName, nickName, sendMes) {
   console.log('请求合并')
   let data = await mergeFile({
-    curFile: fileName,
+    fileHash,
     chunkSize,
     oldName,
     nickName
@@ -242,17 +243,30 @@ async function mergeFileFunc(fileName, chunkSize, oldName, nickName, sendMes) {
  */
 function calculateHash(fileChunkList, changeProcess, setUploading) {
   setUploading(false)
-  return new Promise(resolve => {
-    let worker = new Worker('/hash.js')
-    worker.postMessage({ fileChunkList })
-    worker.onmessage = e => {
-      const { percentage, hash } = e.data
-      console.log('percentage:', percentage)
-      changeProcess(percentage)
-      // this.hashPercentage=percentage
-      if (hash) {
-        resolve(hash)
+  console.log('start calc hash')
+  return new Promise((resolve, reject) => {
+    try {
+      if (typeof Worker !== 'undefined') {
+        console.log('浏览器支持webworker，开始计算hash')
+        let worker = new Worker('/hash.js')
+        worker.postMessage({ fileChunkList })
+        worker.onmessage = e => {
+          const { percentage, hash } = e.data
+          console.log('percentage:', percentage)
+          changeProcess(percentage)
+          // this.hashPercentage=percentage
+          if (hash) {
+            resolve(hash)
+          } else {
+            console.warn('没计算到hash！')
+            // reject('calc hash failed!')
+          }
+        }
+      } else {
+        console.log('改浏览器不支持webWorker计算hash')
       }
+    } catch (error) {
+      console.warn(error)
     }
   })
 }
@@ -279,20 +293,21 @@ async function uploadFunc(
   console.log(splitFileList, uploadedList, Lists)
   // 注意此处的取值，确保了顺序
   const fileChunkList =
-    Lists.length > 0 &&
-    Lists.map(({ chunk, hash, index }) => {
-      const obj = new FormData()
-      obj.append('chunk', chunk) // 片文件
-      // hash码，标识文件片？？？
-      obj.append('hash', fileName + '-' + index)
-      obj.append('fileHash', hash)
-      // 上传文件的名称
-      obj.append('fileName', fileName)
-      // 文件片数，方便后端标识并合并
-      obj.append('chunkNumber', chunkNumber + '')
-      // 生成文件hash
-      return { obj }
-    })
+    (Lists.length > 0 &&
+      Lists.map(({ chunk, hash, index }) => {
+        const obj = new FormData()
+        obj.append('chunk', chunk) // 片文件
+        // hash码，标识文件片？？？
+        obj.append('hash', fileName + '-' + index)
+        obj.append('fileHash', hash)
+        // 上传文件的名称
+        obj.append('fileName', fileName)
+        // 文件片数，方便后端标识并合并
+        obj.append('chunkNumber', chunkNumber + '')
+        // 生成文件hash
+        return { obj }
+      })) ||
+    []
   hackCurChunkList = splitFileList
   // 切片文件集合挨个发送给后端
   const fetchList = fileChunkList.map(async ({ obj }, index) => {
@@ -302,9 +317,12 @@ async function uploadFunc(
   await Promise.all(fetchList)
   console.log('上传成功,开始合并')
   // fileName 改为 fileHash
-  const fileType = fileName.slice(fileName.lastIndexOf('.'), fileName.length)
+  const fileType =
+    fileName.lastIndexOf('.') !== -1
+      ? fileName.slice(fileName.lastIndexOf('.'), fileName.length)
+      : ''
   await mergeFileFunc(
-    fileHash + fileType,
+    fileHash,
     chunkSize,
     fileName,
     nickName,

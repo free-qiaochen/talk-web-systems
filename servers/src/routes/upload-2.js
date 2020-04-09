@@ -90,14 +90,14 @@ routers.post('/upload-file', function (req, res) {
 routers.get('/merge', async (req, res) => {
   serverUrl = req.headers.host
   // console.log(req)
-  const { curFile, chunkSize, oldName,nickName } = req.query
-  console.log(curFile, chunkSize, oldName,nickName)
+  const { fileHash, chunkSize, oldName,nickName } = req.query
+  console.log(fileHash, chunkSize, oldName,nickName)
   // oldName 待用！！！！！！
   // 合并文件路径
-  const filePath = path.resolve(TotalFileDir, `${curFile}`)
+  const filePath = path.resolve(TotalFileDir, `${fileHash}`)
   try {
-    // filePath合并文件路径，curFile 当前文件名，chunkSize--切片大小,oldName原有名字
-    await mergeFileChunk(filePath, curFile, chunkSize, oldName,nickName)
+    // filePath合并文件路径，fileHash 当前文件hash名，chunkSize--切片大小,oldName原有名字
+    await mergeFileChunk(filePath, fileHash, chunkSize, oldName,nickName)
     // res.status(200).json("合并文件成功!");
     // res.send('合并文件成功!')
     res.end(
@@ -105,7 +105,7 @@ routers.get('/merge', async (req, res) => {
     )
   } catch (err) {
     // res.status(400).json(err, 'err104')
-    res.send('err404!')
+    res.send({ code: 1, message: '合并上传失败！' })
   }
 });
 // 提取文件后缀名
