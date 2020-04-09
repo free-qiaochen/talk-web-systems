@@ -78,11 +78,11 @@ function UploadFile(props) {
         setUploading(true)
         console.log(fileHash)
         // 数据
-        const chunkLists = splitFileList.map((file, index) => ({
+        const chunkLists = splitFileList.map(({chunk}, index) => ({
           fileHash,
           index,
           hash: fileHash + '-' + index,
-          chunk: file,
+          chunk: chunk,
           percentage: 0
         }))
         setChunkFileMes({
@@ -211,7 +211,7 @@ function createFileChunk(files, chunkSize = 1000 * 1024) {
   while (curIndex < length) {
     let cur = curIndex * chunkSize
     const fileChunk = files.slice(cur, cur + chunkSize)
-    fileChunkList.push(fileChunk)
+    fileChunkList.push({chunk:fileChunk}) // 修改？？？
     curIndex++
   }
   return { splitFileList: fileChunkList, chunkNumber: length, chunkSize }
