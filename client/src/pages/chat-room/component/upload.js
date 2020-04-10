@@ -334,19 +334,19 @@ async function uploadFunc(
         return { obj }
       })) ||
     []
-  hackCurChunkList = splitFileList
+  hackCurChunkList = Lists  // 当前要上传的切片集合（续传时是剩余需要上传的部分）
   // 切片文件集合挨个发送给后端
   const fetchList = fileChunkList.map(async ({ obj }, index) => {
-    await uploadFile(obj, processCalc, splitFileList[index])
+    await uploadFile(obj, processCalc, hackCurChunkList[index])
     // 上传进度
   })
   await Promise.all(fetchList)
   console.log('上传成功,开始合并')
   // fileName 改为 fileHash
-  const fileType =
-    fileName.lastIndexOf('.') !== -1
-      ? fileName.slice(fileName.lastIndexOf('.'), fileName.length)
-      : ''
+  // const fileType =
+  //   fileName.lastIndexOf('.') !== -1
+  //     ? fileName.slice(fileName.lastIndexOf('.'), fileName.length)
+  //     : ''
   await mergeFileFunc(fileHash, chunkSize, fileName, nickName, sendMes)
   return true
 }
@@ -355,14 +355,14 @@ var hackChangeProcess
 // 计算文件上传进度
 function processCalc(val) {
   // 当前片的进度
-  // console.log(val,hackCurChunkList)
   let process = 0
   const fileLength = hackCurChunkList.length
   hackCurChunkList.forEach(item => {
     process += item.percentage
   })
   let proVal = Number(process / fileLength)
-  console.log(proVal)
+  console.log(process,proVal)
+  console.log('---',val,'---',fileLength)
   hackChangeProcess(proVal, 'upload')
 }
 /**

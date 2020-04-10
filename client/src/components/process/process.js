@@ -1,8 +1,9 @@
 import React from 'react'
 import { Progress } from 'antd-mobile'
-import { 
+import {
   // Line, 
-  Circle } from 'rc-progress'
+  Circle
+} from 'rc-progress'
 import './process.scss'
 
 export default class MyProgress extends React.Component {
@@ -11,10 +12,7 @@ export default class MyProgress extends React.Component {
   // }
   state = {
     // percent: 50,
-    // containerStyle: {
-    //   width: '150px',
-    //   height: '150px'
-    // }
+    uploadProgress: 0,
   }
   add = () => {
     let p = this.state.percent + 10
@@ -23,18 +21,36 @@ export default class MyProgress extends React.Component {
     }
     this.setState({ percent: p })
   }
-  render() {
+  componentWillReceiveProps (nextProps) {
+    console.log(nextProps.process, this.state.uploadProgress)
+    // 进度不能倒退
+    if (nextProps.process > this.state.uploadProgress) {
+      this.setState({
+        uploadProgress: nextProps.process
+      });
+    }
+    // 到达100%后要清空
+    if (nextProps.process === 100) {
+      setTimeout(() => {
+        this.setState({
+          uploadProgress: 0
+        });
+      }, 0);
+    }
+  }
+  render () {
     const { percent, process } = this.props
+    const { uploadProgress } = this.state
     return (
       <div className='progress-container'>
         {percent > 0 && <Progress percent={percent} position='fixed' />}
-        {process>0 && process<100 &&
-        <div className='shadow'>
-          <div className='processConts'>
-            <span className='cont'>{`上传进度:${parseInt(process)}%`}</span>
-            <Circle percent={process} strokeWidth='6' strokeColor='#1686e6' />
-          </div>
-        </div>}
+        {process > 0 && process < 100 &&
+          <div className='shadow'>
+            <div className='processConts'>
+              <span className='cont'>{`上传进度:${parseInt(uploadProgress)}%`}</span>
+              <Circle percent={uploadProgress} strokeWidth='6' strokeColor='#1686e6' />
+            </div>
+          </div>}
         {/* <div style={{ height: 18 }} /> */}
         {/* <Progress percent={40} position="normal" unfilled={false} appearTransition /> */}
         {/* <WingBlank>
