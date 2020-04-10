@@ -18,7 +18,7 @@ import {
   pauseUpload,
   continueUpload,
   calculateHash,
-  verifyUpload,
+  verifyUpload
 } from './upload-utils/upload'
 
 function UploadFile(props) {
@@ -33,16 +33,16 @@ function UploadFile(props) {
     e => {
       e.persist() // react hack
       const [file] = e.target.files
-      console.log(
-        'select file:',
-        e.target.files[0],
-        '--',
-        file.name,
-        '--',
-        file.size,
-        '--',
-        file.type
-      )
+      // console.log(
+      //   'select file:',
+      //   e.target.files[0],
+      //   '--',
+      //   file.name,
+      //   '--',
+      //   file.size,
+      //   '--',
+      //   file.type
+      // )
       setFileDatas(file)
       if (!file) {
         return
@@ -51,10 +51,13 @@ function UploadFile(props) {
     },
     [changeProcess]
   )
-  // const onChange = (files, type, index) => {
-  //   console.log(files, type, index);
-  //   setFileDatas(files)
-  // }
+
+  const initFileLoad = useCallback(() => {
+    // 清空文件，图片输入框
+    setFileDatas(null)
+    console.log(document.querySelectorAll('#curImg').value)
+    document.getElementById('curImg').value = ''
+  }, [])
   /**
    * 点击发送文件，分图片和其他文件
    *  */
@@ -70,11 +73,18 @@ function UploadFile(props) {
       if (fileDatas && fileDatas.type.includes('image')) {
         sendMes('img') //socket发送图片
         setTimeout(() => {
-          setFileDatas(null) //清空输入框显示的名字
+          initFileLoad() //清空输入框显示的名字
         }, 2000)
       } else {
-        if (type === 'continue') {  // 续传
-          continueUpload(chunkFileMes, fileDatas.name, nickName, sendMes,changeProcess)
+        if (type === 'continue') {
+          // 续传
+          continueUpload(
+            chunkFileMes,
+            fileDatas.name,
+            nickName,
+            sendMes,
+            changeProcess
+          )
           return
         }
         console.log('文件切片')
@@ -135,10 +145,10 @@ function UploadFile(props) {
           sendMes,
           changeProcess
         )
-        setFileDatas(null)
+        initFileLoad()
       }
     },
-    [sendMes, fileDatas, chunkFileMes, changeProcess, nickName]
+    [sendMes, fileDatas, chunkFileMes, changeProcess, nickName, initFileLoad]
   )
   // useEffect(() => {
   //   console.log('didMount?')
@@ -154,7 +164,7 @@ function UploadFile(props) {
         type='file'
         name='file'
         id='curImg'
-        // value={fileDatas}
+        value=''
         onChange={e => {
           getFile(e)
         }}
