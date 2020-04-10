@@ -126,7 +126,7 @@ const createUploadedList = async fileHash => {
 routers.get('/verify', async (req, res) => {
   const { fileName, fileHash } = req.query
   const ext = extractExt(fileName)
-  const filePath = path.resolve(TotalFileDir, `${fileHash}${ext}`)
+  const filePath = path.resolve(TotalFileDir, `${fileHash}`)
   console.log('确认文件存在：', filePath)
   let txt
   if (fse.existsSync(filePath)) {

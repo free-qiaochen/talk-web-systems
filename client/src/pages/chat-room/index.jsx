@@ -59,7 +59,8 @@ function Chat(props) {
         }, 1000)
       }
     },
-    [mesHistorys]
+    [//mesHistorys
+    ]
   )
   /**发送消息
    * @params type--消息类型
@@ -147,7 +148,7 @@ function Chat(props) {
   }, [initHistoryList])
   // 进度变化
   const changeProcess = useCallback((val, type) => {
-    console.log('----processType:',type)
+    // console.log('----processType:',type)
     if (!(type === 'upload')) {
       setPercent(val)
     }else{

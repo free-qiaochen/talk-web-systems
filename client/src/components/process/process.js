@@ -1,12 +1,14 @@
 import React from 'react'
 import { Progress } from 'antd-mobile'
-import { Line, Circle } from 'rc-progress'
+import { 
+  // Line, 
+  Circle } from 'rc-progress'
 import './process.scss'
 
 export default class MyProgress extends React.Component {
-  constructor(props){
-    super(props)
-  }
+  // constructor(props){
+  //   super(props)
+  // }
   state = {
     // percent: 50,
     // containerStyle: {

@@ -1,6 +1,10 @@
 // 文件上传，图片上传，切片，大文件，进度，优化速度
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, {
+  // useEffect,
+  useState,
+  useCallback
+} from 'react'
 import {
   Toast,
   Button
@@ -9,10 +13,11 @@ import {
 import global from '@/config'
 import { uploadFile, mergeFile, ifUpload } from '@/api/chart'
 import './upload.scss'
-// import { promises } from 'dns'
 import ClipboardJS from 'clipboard'
 // import worker_script from '/hash.js';
-var myWorker = new Worker('/hash.js')
+// var myWorker = new Worker('/hash.js')
+import calcFileHash from './calc-hash'
+import { deviceType } from "@/tools/device-type";
 
 function UploadFile(props) {
   const { sendMes, changeProcess, nickName } = props
@@ -27,7 +32,16 @@ function UploadFile(props) {
     e => {
       e.persist() // react hack
       const [file] = e.target.files
-      console.log('select file:' ,e.target.files[0],'--',file.name,'--',file.size,'--',file.type)
+      console.log(
+        'select file:',
+        e.target.files[0],
+        '--',
+        file.name,
+        '--',
+        file.size,
+        '--',
+        file.type
+      )
       setFileDatas(file)
       if (!file) {
         return
@@ -78,7 +92,7 @@ function UploadFile(props) {
         setUploading(true)
         console.log(fileHash)
         // 数据
-        const chunkLists = splitFileList.map(({chunk}, index) => ({
+        const chunkLists = splitFileList.map(({ chunk }, index) => ({
           fileHash,
           index,
           hash: fileHash + '-' + index,
@@ -140,24 +154,22 @@ function UploadFile(props) {
       console.error('Trigger:', e.trigger)
     })
   }
-  //
-  // const testPercent = useCallback(() => {
-  //   console.log(a)
-  //   changeProcess(a++)
-  // }, [changeProcess])
-  useEffect(() => {
-    console.log('didMount?')
-    copyFunc('.copyText')
-    myWorker.onmessage = m => {
-      console.log('msg from worker: ', m.data)
-    }
-    myWorker.postMessage('im from main')
-  }, [])
+
+  // useEffect(() => {
+  //   console.log('didMount?')
+  //   copyFunc('.copyText')
+  //   myWorker.onmessage = m => {
+  //     console.log('msg from worker: ', m.data)
+  //   }
+  //   myWorker.postMessage('im from main')
+  // }, [])
   return (
     <div className='mesFiles'>
       <input
-        type='file' name="file"
+        type='file'
+        name='file'
         id='curImg'
+        // value={fileDatas}
         onChange={e => {
           getFile(e)
         }}
@@ -211,7 +223,7 @@ function createFileChunk(files, chunkSize = 1000 * 1024) {
   while (curIndex < length) {
     let cur = curIndex * chunkSize
     const fileChunk = files.slice(cur, cur + chunkSize)
-    fileChunkList.push({chunk:fileChunk}) // 修改？？？
+    fileChunkList.push({ chunk: fileChunk }) // 修改？？？
     curIndex++
   }
   return { splitFileList: fileChunkList, chunkNumber: length, chunkSize }
@@ -246,24 +258,38 @@ function calculateHash(fileChunkList, changeProcess, setUploading) {
   console.log('start calc hash')
   return new Promise((resolve, reject) => {
     try {
-      if (typeof Worker !== 'undefined') {
+      console.log(deviceType())
+      if (typeof Worker !== 'undefined' && (deviceType() === 'pc')) {
         console.log('浏览器支持webworker，开始计算hash')
         let worker = new Worker('/hash.js')
         worker.postMessage({ fileChunkList })
         worker.onmessage = e => {
           const { percentage, hash } = e.data
-          console.log('percentage:', percentage)
+          // console.log('percentage:', percentage)
           changeProcess(percentage)
           // this.hashPercentage=percentage
           if (hash) {
             resolve(hash)
           } else {
-            console.warn('没计算到hash！')
+            // console.warn('没计算到hash！')
             // reject('calc hash failed!')
           }
         }
       } else {
         console.log('改浏览器不支持webWorker计算hash')
+        const callBack = callBackObj => {
+          const { percentage, hash } = callBackObj
+          // console.log('percentage:', percentage)
+          changeProcess(percentage)
+          if (hash) {
+            resolve(hash)
+          } else {
+            // console.warn('没计算到hash！')
+            // reject('calc hash failed!')
+          }
+        }
+        //
+        calcFileHash({ fileChunkList }, callBack)
       }
     } catch (error) {
       console.warn(error)
@@ -321,13 +347,7 @@ async function uploadFunc(
     fileName.lastIndexOf('.') !== -1
       ? fileName.slice(fileName.lastIndexOf('.'), fileName.length)
       : ''
-  await mergeFileFunc(
-    fileHash,
-    chunkSize,
-    fileName,
-    nickName,
-    sendMes
-  )
+  await mergeFileFunc(fileHash, chunkSize, fileName, nickName, sendMes)
   return true
 }
 var hackCurChunkList = []
