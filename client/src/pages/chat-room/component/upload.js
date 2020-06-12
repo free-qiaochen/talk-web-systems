@@ -164,7 +164,7 @@ function UploadFile(props) {
         type='file'
         name='file'
         id='curImg'
-        value=''
+        // value=''
         onChange={e => {
           getFile(e)
         }}

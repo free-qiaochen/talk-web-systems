@@ -15,7 +15,7 @@ pc 移动 自适应，移动端优先
 初始引用了antd-mobile ui库，只适用于移动端，
 现计划适应antd-design 搭配响应式方案来开发；
 
-#### 在自己的阿里云服务其=器部署
+#### 在自己的阿里云服务器部署
 采用nginx作为静态文件服务器，history路由处理，监听端口号3006
 在服务端项目启动：
 在目录：/home/web-server/talk-web-systems/servers 

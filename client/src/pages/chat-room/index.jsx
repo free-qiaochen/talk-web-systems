@@ -292,9 +292,10 @@ function sendText(ioSocket, mesVal, type) {
 // 发送图片
 async function sendImg(ioSocket, imgsId, addMes, onlineNum) {
   const imgInput = document.getElementById(imgsId)
+  console.log(imgInput)
   if (!imgInput.value) {
     Toast.info('请先选择图片 !!!', 1)
-    return
+    // return
   }
   let file = imgInput.files[0]
   let miniFile = await imgConversion(file)
@@ -318,7 +319,7 @@ async function sendImg(ioSocket, imgsId, addMes, onlineNum) {
 async function imgConversion(imgFile) {
   try {
     const res = await imageConversion.compressAccurately(imgFile, 200)
-    // console.log(res)
+    console.log(res)
     return res
   } catch (error) {
     console.error(error)
