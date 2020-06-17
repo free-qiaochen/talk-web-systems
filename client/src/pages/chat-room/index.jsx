@@ -295,13 +295,13 @@ async function sendImg(ioSocket, imgsId, addMes, onlineNum) {
   console.log(imgInput)
   if (!imgInput.value) {
     Toast.info('请先选择图片 !!!', 1)
-    // return
+    return
   }
   let file = imgInput.files[0]
   let miniFile = await imgConversion(file)
   let reader = new FileReader()
   reader.readAsDataURL(miniFile)
-  Toast.loading('发送中', 0)
+  Toast.loading('发送中', 10)
   reader.onload = function() {
     let imgs = { img: this.result, nickName: '', name: file.name }
     ioSocket.emit('sendImg', imgs)
