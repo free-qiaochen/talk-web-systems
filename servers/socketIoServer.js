@@ -11,7 +11,8 @@ const file_routers = require('./src/routes/upload-2')
 
 // http 設置
 app.use('/', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  // res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Origin', 'http://chat.cqg86.top');
   res.header('Access-Control-Allow-Headers', 'Content-Type,Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
   res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE,OPTIONS');
   next()
@@ -24,7 +25,7 @@ app.get('/chat', function (req, res) {
   let { num } = req.query
   // console.log(req.query)
   const findOption = {}
-  msgDb.findMes(findOption, { nickName: 1, says: 1,type:1, _id: 0 }, { limit: Number(num), sort: { _id: -1 } }, callback)
+  msgDb.findMes(findOption, { nickName: 1, says: 1, type: 1, _id: 0 }, { limit: Number(num), sort: { _id: -1 } }, callback)
   function callback (err, data) {
     console.log(err)
     // console.log(err,data, 'data')
@@ -76,7 +77,7 @@ io.on('connection', function (socket) {
       socket.name = msg
       onlineUsers[msg] = socket
       broadcast(`修改昵称为：${msg}`, socket)
-    }else if (type==='file') {
+    } else if (type === 'file') {
       broadcast(msg, socket)
     } else {
       broadcast(msg, socket)
@@ -107,7 +108,7 @@ io.on('connection', function (socket) {
       if (err) {
         console.error(err)
         // res.send(err);
-      }else{
+      } else {
         console.log('图片写入成功！')
       }
     });
