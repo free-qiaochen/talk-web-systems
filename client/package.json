@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "antd-mobile": "^2.3.1",
-    "axios": "^0.19.1",
+    "axios": "^0.21.1",
     "clipboard": "^2.0.6",
     "cra-template": "1.0.0",
     "image-conversion": "^2.1.1",
